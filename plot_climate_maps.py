@@ -31,6 +31,10 @@ warnings.filterwarnings("ignore")
 DATA_DIR = Path(__file__).parent / "data"
 NC_FILE  = DATA_DIR / "cru_ts4.09.1901.2024.tmx.dat.nc"
 NC_GZ    = DATA_DIR / "cru_ts4.09.1901.2024.tmx.dat.nc.gz"
+
+# Output directory for generated PNGs (created on demand)
+OUTPUT_DIR = Path(__file__).parent / "outputs" / "climate_shift"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 CRU_URL  = ("https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/"
             "cruts.2503051245.v4.09/tmx/cru_ts4.09.1901.2024.tmx.dat.nc.gz")
 
@@ -228,7 +232,7 @@ make_map(
     projection=ccrs.LambertConformal(central_longitude=10, central_latitude=50),
     title_big=f"+{eu_mean:.1f} °C",
     title_sub="Europe Is Warming",
-    filename="map_europe_warming.png",
+    filename=str(OUTPUT_DIR / "map_europe_warming.png"),
     vmin=-2, vmax=4, vcenter=0,
     city_markers=[
         ("Paris", 48.86, 2.35), ("Berlin", 52.52, 13.40),
@@ -246,7 +250,7 @@ make_map(
     projection=ccrs.Mercator(),
     title_big=f"+{alps_mean:.1f} °C",
     title_sub="The Alps Are Heating Up",
-    filename="map_alps_warming.png",
+    filename=str(OUTPUT_DIR / "map_alps_warming.png"),
     cmap=WARM_SEQ_CMAP, vmin=0, vmax=3.5, vcenter=1.5,
     city_markers=[
         ("Zurich", 47.37, 8.54), ("Innsbruck", 47.26, 11.39),
@@ -277,7 +281,7 @@ for city_name, clat, clon, box_half in cities:
         projection=ccrs.Mercator(),
         title_big=f"+{city_mean:.1f} °C",
         title_sub=f"{city_name}",
-        filename=f"map_{city_name.lower()}_warming.png",
+        filename=str(OUTPUT_DIR / f"map_{city_name.lower()}_warming.png"),
         cmap=WARM_SEQ_CMAP, vmin=0, vmax=3.5, vcenter=1.5,
         city_markers=[(city_name, clat, clon)],
     )
@@ -295,7 +299,7 @@ if EOBS_HOT.exists():
         projection=ccrs.LambertConformal(central_longitude=10, central_latitude=50),
         title_big="30 °C+",
         title_sub="More Hot Days Each Summer",
-        filename="map_extreme_heat_days.png",
+        filename=str(OUTPUT_DIR / "map_extreme_heat_days.png"),
         cmap=HEAT_CMAP,
         vmin=0, vmax=35, vcenter=None,
         cb_unit="days",
@@ -305,5 +309,5 @@ else:
     print("  Skipping extreme heat map — E-OBS hot days file not found")
 
 print(f"\nDone. Maps saved:")
-for f in sorted(Path(".").glob("map_*.png")):
+for f in sorted(OUTPUT_DIR.glob("map_*.png")):
     print(f"  {f}")

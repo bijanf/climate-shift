@@ -13,6 +13,9 @@ glacier_data/outputs/
 # Generated outputs (regenerate via pipelines)
 glacier_outputs/
 
+# Stray PNGs in root (climate shift outputs go in outputs/climate_shift/)
+/*.png
+
 # Python
 __pycache__/
 *.pyc

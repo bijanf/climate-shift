@@ -67,6 +67,11 @@ STATIONS_URL  = "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.tx
 # Instagram slide dimensions (portrait 4:5)
 IG_W, IG_H = 1080, 1350
 IG_DPI = 150
+
+# Output directory for generated PNGs (created on demand)
+from pathlib import Path as _Path
+OUTPUT_DIR = _Path(__file__).parent / "outputs" / "climate_shift"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 IG_FIG = (IG_W / IG_DPI, IG_H / IG_DPI)
 
 
@@ -555,7 +560,7 @@ def make_slide1():
              fontsize=7, ha="center", color=C_LIGHT, family=FONT)
 
     plt.subplots_adjust(left=0.06, right=0.97, top=0.83, bottom=0.24)
-    fig.savefig("slide_1_kde.png", dpi=IG_DPI, facecolor=C_BG)
+    fig.savefig(OUTPUT_DIR / "slide_1_kde.png", dpi=IG_DPI, facecolor=C_BG)
     plt.close(fig)
     print("  Saved slide_1_kde.png")
 
@@ -618,7 +623,7 @@ def make_slide2():
     fig.text(0.50, 0.015, SOURCE,
              fontsize=7, ha="center", color=C_LIGHT, family=FONT)
 
-    fig.savefig("slide_2_map.png", dpi=IG_DPI, facecolor=C_BG)
+    fig.savefig(OUTPUT_DIR / "slide_2_map.png", dpi=IG_DPI, facecolor=C_BG)
     plt.close(fig)
     print("  Saved slide_2_map.png")
 
@@ -719,7 +724,7 @@ def make_slide3():
              fontsize=7, ha="center", color=C_LIGHT, family=FONT)
 
     plt.subplots_adjust(left=0.06, right=0.97, top=0.83, bottom=0.07)
-    fig.savefig("slide_3_histogram.png", dpi=IG_DPI, facecolor=C_BG)
+    fig.savefig(OUTPUT_DIR / "slide_3_histogram.png", dpi=IG_DPI, facecolor=C_BG)
     plt.close(fig)
     print("  Saved slide_3_histogram.png")
 
@@ -805,7 +810,7 @@ def make_slide4():
     ax.text(0.50, 0.020, SOURCE,
             fontsize=7, ha="center", color=C_LIGHT, family=FONT)
 
-    fig.savefig("slide_4_methodology.png", dpi=IG_DPI, facecolor=C_BG)
+    fig.savefig(OUTPUT_DIR / "slide_4_methodology.png", dpi=IG_DPI, facecolor=C_BG)
     plt.close(fig)
     print("  Saved slide_4_methodology.png")
 
@@ -885,7 +890,7 @@ def make_detail_figure():
         ax.set_ylabel("")
         ax.tick_params(labelsize=8)
 
-    fig.savefig("hohenpeissenberg_climate_shift.png", dpi=300, bbox_inches="tight")
+    fig.savefig(OUTPUT_DIR / "hohenpeissenberg_climate_shift.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
     print("  Saved hohenpeissenberg_climate_shift.png")
 
@@ -1018,7 +1023,7 @@ N_CITY_SLIDES = min(15, len(results))
 for i in range(N_CITY_SLIDES):
     r = results[i]
     slug = r["name"].replace(" ", "_").replace("-", "_").replace("/", "_").lower()[:20]
-    make_station_slide(r, filename=f"slide_city_{slug}.png")
+    make_station_slide(r, filename=str(OUTPUT_DIR / f"slide_city_{slug}.png"))
 
 make_detail_figure()
 
