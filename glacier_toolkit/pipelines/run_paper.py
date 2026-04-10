@@ -109,7 +109,8 @@ def main():
         # ── Glacier area time series ──
         if ndsi_files:
             try:
-                ts_df = build_area_timeseries(ndsi_files)
+                # Use fast path for batch — skip connected component filtering
+                ts_df = build_area_timeseries(ndsi_files, fast=True)
                 change = compute_area_change(ts_df)
                 trend = fit_linear_trend(ts_df)
                 area_change_pct = change["change_pct"]

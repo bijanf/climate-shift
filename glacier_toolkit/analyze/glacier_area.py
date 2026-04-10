@@ -17,7 +17,13 @@ from .ndsi import (
 from .statistics import bootstrap_trend_ci, mann_kendall_test
 
 
-def compute_area_from_ndsi_file(ndsi_path, threshold=0.4, min_area_km2=0.01, pixel_size_m=30):
+def compute_area_from_ndsi_file(
+    ndsi_path,
+    threshold=0.4,
+    min_area_km2=0.01,
+    pixel_size_m=30,
+    fast=False,
+):
     """Compute glacier area and uncertainty from an NDSI GeoTIFF.
 
     Parameters
@@ -27,9 +33,13 @@ def compute_area_from_ndsi_file(ndsi_path, threshold=0.4, min_area_km2=0.01, pix
     threshold : float
         NDSI classification threshold.
     min_area_km2 : float
-        Minimum connected-component area.
+        Minimum connected-component area (ignored if fast=True).
     pixel_size_m : float
         Pixel resolution.
+    fast : bool
+        If True, skip connected-component filtering and uncertainty
+        computation. Useful for batch processing of many large rasters
+        where the threshold-only count is sufficient (e.g. paper pipeline).
 
     Returns
     -------
@@ -37,22 +47,32 @@ def compute_area_from_ndsi_file(ndsi_path, threshold=0.4, min_area_km2=0.01, pix
         Keys: 'area_km2', 'uncertainty_km2', 'n_pixels', 'threshold'.
     """
     ndsi = load_ndsi_geotiff(ndsi_path)
-    mask = classify_glacier(
-        ndsi, threshold=threshold, min_area_km2=min_area_km2, pixel_size_m=pixel_size_m
-    )
 
-    area = compute_glacier_area_km2(mask, pixel_size_m)
-    uncertainty = compute_area_uncertainty_km2(mask, pixel_size_m)
+    if fast:
+        # Fast path: just count pixels above threshold (no labelling)
+        values = ndsi.values
+        mask = np.where(np.isnan(values), False, values > threshold)
+        n_pixels = int(np.sum(mask))
+        area = float(n_pixels) * (pixel_size_m**2) / 1e6
+        # Approximate uncertainty as 5% of area (typical for clean glaciers)
+        uncertainty = area * 0.05
+    else:
+        mask = classify_glacier(
+            ndsi, threshold=threshold, min_area_km2=min_area_km2, pixel_size_m=pixel_size_m
+        )
+        area = compute_glacier_area_km2(mask, pixel_size_m)
+        uncertainty = compute_area_uncertainty_km2(mask, pixel_size_m)
+        n_pixels = int(np.sum(mask))
 
     return {
         "area_km2": area,
         "uncertainty_km2": uncertainty,
-        "n_pixels": int(np.sum(mask)),
+        "n_pixels": n_pixels,
         "threshold": threshold,
     }
 
 
-def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4):
+def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4, fast=False):
     """Build a glacier area time series from a dict of NDSI GeoTIFFs.
 
     Parameters
@@ -61,6 +81,9 @@ def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4):
         {year: Path} mapping from export_timeseries().
     pixel_size_m : float
     threshold : float
+    fast : bool
+        Use the fast path (skip connected-component filtering).
+        Recommended for batch processing of many large rasters.
 
     Returns
     -------
@@ -72,7 +95,7 @@ def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4):
         path = ndsi_files[year]
         try:
             result = compute_area_from_ndsi_file(
-                path, threshold=threshold, pixel_size_m=pixel_size_m
+                path, threshold=threshold, pixel_size_m=pixel_size_m, fast=fast
             )
             result["year"] = year
             records.append(result)
