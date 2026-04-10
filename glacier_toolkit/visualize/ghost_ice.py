@@ -27,7 +27,13 @@ from ..config import (
     IG_FIG,
     IG_OUT_DIR,
 )
-from ..style import add_slide_number, add_source_line, add_title_zone, apply_theme
+from ..style import (
+    add_north_arrow,
+    add_slide_number,
+    add_source_line,
+    add_title_zone,
+    apply_theme,
+)
 
 
 def make_ghost_ice_slide(
@@ -169,6 +175,9 @@ def make_ghost_ice_slide(
     ax.set_xlim(extent[0], extent[1]) if extent else None
     ax.set_ylim(extent[2], extent[3]) if extent else None
     ax.axis("off")
+
+    # ── North arrow (top-right corner) ──
+    add_north_arrow(ax, x=0.94, y=0.88, size=0.05)
 
     # ── Legend ──
     legend_elements = [

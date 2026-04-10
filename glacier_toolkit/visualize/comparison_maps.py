@@ -21,7 +21,13 @@ from ..config import (
     IG_FIG,
     IG_OUT_DIR,
 )
-from ..style import add_slide_number, add_source_line, add_title_zone, apply_theme
+from ..style import (
+    add_north_arrow,
+    add_slide_number,
+    add_source_line,
+    add_title_zone,
+    apply_theme,
+)
 
 
 def make_comparison_slide(
@@ -81,6 +87,7 @@ def make_comparison_slide(
             np.clip(early_rgb * 1.5, 0, 1), extent=extent, aspect="auto", interpolation="bilinear"
         )
     _overlay_mask_outline(ax1, early_mask, color=C_ICE, linewidth=1.5, extent=extent)
+    add_north_arrow(ax1, x=0.94, y=0.82, size=0.07)
     ax1.text(
         0.02,
         0.95,
@@ -117,6 +124,7 @@ def make_comparison_slide(
         ax2, early_mask, color=C_ICE, linewidth=1.0, linestyle="--", extent=extent
     )
     _overlay_mask_outline(ax2, late_mask, color="#FFFFFF", linewidth=1.5, extent=extent)
+    add_north_arrow(ax2, x=0.94, y=0.82, size=0.07)
     ax2.text(
         0.02,
         0.95,

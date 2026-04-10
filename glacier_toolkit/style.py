@@ -224,6 +224,140 @@ def add_colorbar(fig, mappable, cb_unit="", vmin=0, vmax=1, extend="neither", po
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Cartographic decorations
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def add_north_arrow(ax, x=0.92, y=0.88, size=0.08, color=None, labelcolor=None):
+    """Draw a clear, visible north arrow on a matplotlib axes.
+
+    Designed for image axes (e.g. satellite raster overlays) where the
+    imagery is north-up — which is the standard for projected satellite
+    rasters from Landsat, Sentinel-2, and most GIS workflows.
+
+    The arrow is drawn on a subtle dark background panel so it remains
+    visible against both bright snow/ice and dark rock/water.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Target axes.
+    x, y : float
+        Center position in axes coordinates (0-1). Default: top-right corner.
+    size : float
+        Arrow length in axes coordinates.
+    color : str, optional
+        Arrow color. Defaults to project ice-cyan for contrast.
+    labelcolor : str, optional
+        "N" label color. Defaults to bright white.
+    """
+    import matplotlib.patches as mpatches
+
+    if color is None:
+        color = C_ICE
+    if labelcolor is None:
+        labelcolor = "#FFFFFF"
+
+    # Background panel for contrast (dark, semi-transparent)
+    pad = size * 0.55
+    bg = mpatches.FancyBboxPatch(
+        (x - pad, y - size * 0.6),
+        2 * pad,
+        size * 1.9,
+        boxstyle="round,pad=0.005,rounding_size=0.012",
+        transform=ax.transAxes,
+        facecolor=C_BG,
+        edgecolor=C_LIGHT,
+        linewidth=0.8,
+        alpha=0.85,
+        zorder=10,
+    )
+    ax.add_patch(bg)
+
+    # Arrow shaft + head pointing up
+    ax.annotate(
+        "",
+        xy=(x, y + size * 0.6),
+        xytext=(x, y - size * 0.45),
+        xycoords="axes fraction",
+        arrowprops=dict(
+            arrowstyle="-|>,head_length=0.6,head_width=0.35",
+            color=color,
+            linewidth=2.2,
+            mutation_scale=18,
+        ),
+        annotation_clip=False,
+        zorder=11,
+    )
+
+    # "N" label above the arrow head
+    ax.text(
+        x,
+        y + size * 0.85,
+        "N",
+        transform=ax.transAxes,
+        fontsize=13,
+        fontweight="bold",
+        color=labelcolor,
+        ha="center",
+        va="bottom",
+        family=FONT_FAMILY,
+        zorder=12,
+    )
+
+
+def add_scale_bar(ax, length_km, x=0.05, y=0.05, height=0.005, color=None):
+    """Draw a simple horizontal scale bar in axes coordinates.
+
+    Note: This is a *visual* scale bar that uses the axes coordinate system.
+    For an accurate metric scale, the imagery's geographic extent must be
+    known and passed in via the imshow extent parameter.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+    length_km : float
+        Length the bar represents in km (for the label).
+    x, y : float
+        Bottom-left position in axes coordinates.
+    height : float
+        Bar thickness in axes coordinates.
+    color : str, optional
+        Bar color. Defaults to project text color.
+    """
+    import matplotlib.patches as mpatches
+
+    if color is None:
+        color = C_TEXT
+
+    # Bar (~12% of axes width)
+    bar_width = 0.12
+    bar = mpatches.Rectangle(
+        (x, y),
+        bar_width,
+        height,
+        transform=ax.transAxes,
+        facecolor=color,
+        edgecolor=color,
+        linewidth=0.8,
+    )
+    ax.add_patch(bar)
+
+    # Label centered above the bar
+    ax.text(
+        x + bar_width / 2,
+        y + height + 0.012,
+        f"{length_km:g} km",
+        transform=ax.transAxes,
+        fontsize=9,
+        color=color,
+        ha="center",
+        va="bottom",
+        family=FONT_FAMILY,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Map helpers (from plot_climate_maps.py:131-205)
 # ══════════════════════════════════════════════════════════════════════════════
 

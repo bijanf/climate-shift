@@ -21,7 +21,7 @@ from ..config import (
     IG_FIG,
     IG_OUT_DIR,
 )
-from ..style import apply_theme
+from ..style import add_north_arrow, apply_theme
 
 
 def generate_timelapse_frames(
@@ -120,6 +120,9 @@ def generate_timelapse_frames(
         # Glacier outline
         if show_outline and "mask" in data:
             _draw_contour(ax, data["mask"], C_ICE, 1.5, extent)
+
+        # North arrow
+        add_north_arrow(ax, x=0.94, y=0.88, size=0.05)
 
         ax.axis("off")
 
