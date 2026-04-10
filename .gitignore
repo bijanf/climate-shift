@@ -1,0 +1,38 @@
+# Large data files (10+ GB) — download via scripts
+data/*.nc
+data/*.nc.gz
+data/*.dat
+
+# Glacier satellite data cache
+glacier_data/landsat/
+glacier_data/sentinel/
+glacier_data/glims/
+glacier_data/dem/
+glacier_data/outputs/
+
+# Generated outputs (regenerate via pipelines)
+glacier_outputs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.credentials

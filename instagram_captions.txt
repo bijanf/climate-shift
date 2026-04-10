@@ -1,0 +1,61 @@
+═══════════════════════════════════════════════
+3-SLIDE CAROUSEL CAPTION (post this once for all 3 slides)
+═══════════════════════════════════════════════
+
+Today is Sizdah Bedar — the 13th day of the Persian New Year and Nature Day. A day when Iranians celebrate the beauty of the earth and spend the day outdoors, showing gratitude to mother nature.
+
+But since the Industrial Revolution, we have been pushing our planet out of its safe corridor of stability — toward the edge of its tipping points. The data below shows what that looks like across Europe.
+
+Hope for better times — for both nature and humanity.
+
+—
+
+Europe's climate is splitting apart.
+
+Slide 1: Up to 30 more days above 30 °C each summer in the Mediterranean.
+Slide 2: More extreme downpours across Northern Europe.
+Slide 3: More rainless days drying out the south.
+
+All maps compare 1995–2024 to 1950–1979 using daily observations from over 27,000 weather stations (E-OBS v32, Cornes et al. 2018, 0.25° resolution).
+
+2024 was Europe's hottest year on record (Copernicus ESOTC 2024). The past three years — 2024, 2023, 2025 — were the three hottest ever recorded globally.
+
+References:
+• Cornes et al. (2018), Int. J. Climatol. — doi.org/10.1002/joc.5264
+• Copernicus (2025), European State of the Climate 2024 — climate.copernicus.eu/esotc/2024
+
+#ClimateChange #GlobalWarming #Europe #Heatwave #Drought #Flooding #ExtremeWeather #ClimateData #Copernicus #DataVisualization #ClimateCrisis #ClimateScience
+
+
+═══════════════════════════════════════════════
+INDIVIDUAL SLIDE CAPTIONS (if posting separately)
+═══════════════════════════════════════════════
+
+── carousel_1_hot_days.png ──
+
+Southern Europe now gets up to 30 extra days above 30 °C each summer compared to 1950–1979. Turkey, Cyprus, and southern Spain are hit hardest.
+
+Data: E-OBS v32 daily max temperature (Cornes et al. 2018) · 0.25° grid · 27,000+ stations
+2024 was Europe's hottest year on record (Copernicus).
+
+#ClimateChange #Heatwave #30degrees #Europe #Mediterranean #ExtremeHeat #Copernicus #ClimateData
+
+
+── carousel_2_heavy_rain.png ──
+
+More days with heavy rainfall (>20 mm) across Europe — especially Norway, Iceland, the Alps, and parts of the Mediterranean coast. Flood risk is rising.
+
+Data: E-OBS v32 daily precipitation (Cornes et al. 2018) · 0.25° grid
+Europe saw its most widespread flooding since 2013 in 2024 (Copernicus ESOTC 2024).
+
+#Flooding #ExtremeRain #ClimateChange #Europe #HeavyRain #Copernicus #ClimateData #FloodRisk
+
+
+── carousel_3_dry_days.png ──
+
+More days without rain across the Mediterranean, Iberia, and the Balkans. Southern Europe is drying out — up to 20 extra rainless days per year.
+
+Data: E-OBS v32 daily precipitation (Cornes et al. 2018) · 0.25° grid
+SE Europe saw its driest summer on record in a 12-year drought index in 2024 (Copernicus).
+
+#Drought #ClimateChange #Europe #Mediterranean #WaterCrisis #Copernicus #ClimateData #DrySpell
