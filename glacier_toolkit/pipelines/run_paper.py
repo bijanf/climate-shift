@@ -48,6 +48,7 @@ def main():
     )
     args = parser.parse_args()
 
+    from glacier_toolkit.acquire.glims_gee import fetch_glims_for_glacier
     from glacier_toolkit.analyze.climate_link import (
         compute_local_warming_rate,
         get_glacier_climate,
@@ -106,11 +107,20 @@ def main():
             if args.require_cached:
                 continue
 
+        # ── Fetch glacier polygon from GLIMS (for accurate area measurement) ──
+        try:
+            glacier_polygon = fetch_glims_for_glacier(glacier)
+        except Exception as exc:
+            print(f"  Warning: GLIMS fetch failed: {exc}")
+            glacier_polygon = None
+
         # ── Glacier area time series ──
         if ndsi_files:
             try:
-                # Use fast path for batch — skip connected component filtering
-                ts_df = build_area_timeseries(ndsi_files, fast=True)
+                # Fast path + polygon clipping for paper-grade results
+                ts_df = build_area_timeseries(
+                    ndsi_files, fast=True, glacier_polygon=glacier_polygon
+                )
                 change = compute_area_change(ts_df)
                 trend = fit_linear_trend(ts_df)
                 area_change_pct = change["change_pct"]

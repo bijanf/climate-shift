@@ -3,6 +3,10 @@ Multi-temporal glacier area change analysis.
 
 Computes glacier area time series from annual NDSI GeoTIFFs, fits trends
 with bootstrap confidence intervals, and detects acceleration in retreat.
+
+Optionally clips the NDSI raster to a glacier polygon (e.g. from GLIMS)
+for scientifically defensible area measurements that exclude surrounding
+snow/ice not part of the named glacier.
 """
 
 import numpy as np
@@ -17,12 +21,41 @@ from .ndsi import (
 from .statistics import bootstrap_trend_ci, mann_kendall_test
 
 
+def _clip_ndsi_to_polygon(ndsi, glacier_polygon):
+    """Clip an NDSI DataArray to a glacier polygon (GeoDataFrame).
+
+    Parameters
+    ----------
+    ndsi : xarray.DataArray
+        NDSI raster with rio CRS metadata.
+    glacier_polygon : geopandas.GeoDataFrame
+        Glacier outline.
+
+    Returns
+    -------
+    xarray.DataArray
+        NDSI clipped to the polygon. Pixels outside the polygon are NaN.
+    """
+    # Reproject the polygon to the raster CRS if needed
+    raster_crs = ndsi.rio.crs
+    if str(glacier_polygon.crs) != str(raster_crs):
+        glacier_polygon = glacier_polygon.to_crs(raster_crs)
+
+    return ndsi.rio.clip(
+        glacier_polygon.geometry,
+        glacier_polygon.crs,
+        all_touched=True,
+        drop=True,
+    )
+
+
 def compute_area_from_ndsi_file(
     ndsi_path,
     threshold=0.4,
     min_area_km2=0.01,
     pixel_size_m=30,
     fast=False,
+    glacier_polygon=None,
 ):
     """Compute glacier area and uncertainty from an NDSI GeoTIFF.
 
@@ -40,6 +73,11 @@ def compute_area_from_ndsi_file(
         If True, skip connected-component filtering and uncertainty
         computation. Useful for batch processing of many large rasters
         where the threshold-only count is sufficient (e.g. paper pipeline).
+    glacier_polygon : geopandas.GeoDataFrame, optional
+        If provided, clip the NDSI raster to this polygon before computing
+        the area. This is the recommended approach for scientific analysis:
+        it excludes snow/ice in the surrounding terrain that is not part of
+        the named glacier.
 
     Returns
     -------
@@ -47,6 +85,12 @@ def compute_area_from_ndsi_file(
         Keys: 'area_km2', 'uncertainty_km2', 'n_pixels', 'threshold'.
     """
     ndsi = load_ndsi_geotiff(ndsi_path)
+
+    if glacier_polygon is not None and len(glacier_polygon) > 0:
+        try:
+            ndsi = _clip_ndsi_to_polygon(ndsi, glacier_polygon)
+        except Exception as exc:
+            print(f"  Warning: polygon clip failed for {ndsi_path}: {exc}")
 
     if fast:
         # Fast path: just count pixels above threshold (no labelling)
@@ -72,7 +116,13 @@ def compute_area_from_ndsi_file(
     }
 
 
-def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4, fast=False):
+def build_area_timeseries(
+    ndsi_files,
+    pixel_size_m=30,
+    threshold=0.4,
+    fast=False,
+    glacier_polygon=None,
+):
     """Build a glacier area time series from a dict of NDSI GeoTIFFs.
 
     Parameters
@@ -84,6 +134,9 @@ def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4, fast=False
     fast : bool
         Use the fast path (skip connected-component filtering).
         Recommended for batch processing of many large rasters.
+    glacier_polygon : geopandas.GeoDataFrame, optional
+        If provided, clip each annual NDSI raster to this polygon before
+        computing the area. Strongly recommended for paper-grade analysis.
 
     Returns
     -------
@@ -95,7 +148,11 @@ def build_area_timeseries(ndsi_files, pixel_size_m=30, threshold=0.4, fast=False
         path = ndsi_files[year]
         try:
             result = compute_area_from_ndsi_file(
-                path, threshold=threshold, pixel_size_m=pixel_size_m, fast=fast
+                path,
+                threshold=threshold,
+                pixel_size_m=pixel_size_m,
+                fast=fast,
+                glacier_polygon=glacier_polygon,
             )
             result["year"] = year
             records.append(result)
