@@ -91,12 +91,13 @@ glacier-analyze = "glacier_toolkit.pipelines.run_single_glacier:main"
 glacier-global = "glacier_toolkit.pipelines.run_global_overview:main"
 glacier-glof = "glacier_toolkit.pipelines.run_andes_glof:main"
 glacier-social = "glacier_toolkit.pipelines.run_social_post:main"
+glacier-paper = "glacier_toolkit.pipelines.run_paper:main"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Hatchling — package discovery
 # ──────────────────────────────────────────────────────────────────────────────
 [tool.hatch.build.targets.wheel]
-packages = ["glacier_toolkit"]
+packages = ["glacier_toolkit", "glacier_toolkit/validate"]
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Ruff — linting + formatting (replaces black, isort, flake8)
