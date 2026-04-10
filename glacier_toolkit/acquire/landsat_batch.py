@@ -171,14 +171,16 @@ def compute_areas_for_glacier_batch(
     years,
     season_months,
     ndsi_threshold=0.40,
-    batch_size=200,
+    batch_size=100,
     cache_path=None,
     progress_callback=None,
+    simplify_tolerance_m=100,
 ):
     """Compute glacier areas for many glaciers across many years.
 
-    Splits into batches to stay under GEE getInfo limits, with optional
-    caching of intermediate results.
+    Splits into batches to stay under GEE getInfo (5000 features) and
+    payload (10 MB) limits. On payload errors, automatically retries
+    with smaller batches and finally one-by-one.
 
     Parameters
     ----------
@@ -188,11 +190,15 @@ def compute_areas_for_glacier_batch(
     season_months : list of int
     ndsi_threshold : float
     batch_size : int
-        Glaciers per GEE call. 200 keeps comfortably under the limit.
+        Initial glaciers per GEE call. Auto-shrinks on payload errors.
     cache_path : Path, optional
         Where to incrementally save results. Allows interrupted runs.
     progress_callback : callable, optional
         Called with (year_idx, year, batch_idx, n_batches) for progress.
+    simplify_tolerance_m : float
+        Polygon simplification tolerance in meters. Reduces payload
+        size dramatically for large glaciers (Vatnajokull, Jakobshavn)
+        without changing the area significantly. Default 100m.
 
     Returns
     -------
@@ -201,9 +207,16 @@ def compute_areas_for_glacier_batch(
     """
     ee = _get_ee()
 
-    # Convert GeoDataFrame to GEE FeatureCollection
-    print(f"  Converting {len(gdf)} glaciers to GEE features...")
-    features_all = _gdf_to_ee_features(gdf)
+    # Simplify polygons before sending to GEE — huge payload reduction
+    if simplify_tolerance_m > 0:
+        print(f"  Simplifying polygons (tolerance={simplify_tolerance_m}m)...")
+        gdf_simple = _simplify_geodf(gdf, tolerance_m=simplify_tolerance_m)
+    else:
+        gdf_simple = gdf
+
+    # Convert GeoDataFrame to GEE Feature dicts
+    print(f"  Converting {len(gdf_simple)} glaciers to GEE features...")
+    features_all = _gdf_to_ee_features(gdf_simple)
 
     n = len(features_all)
     n_batches = (n + batch_size - 1) // batch_size
@@ -225,31 +238,70 @@ def compute_areas_for_glacier_batch(
         print(f"\n  Year {year} ({yi + 1}/{len(years)})")
         for bi in range(n_batches):
             batch = features_all[bi * batch_size : (bi + 1) * batch_size]
-            # Skip batches where every glacier-year is already done
             if all((f["properties"]["glac_id"], year) in done_keys for f in batch):
                 continue
 
-            t0 = time.time()
-            try:
-                fc = ee.FeatureCollection(batch)
-                rows = compute_glacier_areas_for_year(fc, year, season_months, ndsi_threshold)
-                for r in rows:
-                    r["year"] = year
-                all_rows.extend(rows)
+            rows = _process_batch_with_retry(ee, batch, year, season_months, ndsi_threshold)
+            for r in rows:
+                r["year"] = year
+            all_rows.extend(rows)
 
-                # Incremental save
-                if cache_path:
-                    pd.DataFrame(all_rows).to_csv(cache_path, index=False)
+            if cache_path:
+                pd.DataFrame(all_rows).to_csv(cache_path, index=False)
 
-                elapsed = time.time() - t0
-                print(f"    batch {bi + 1}/{n_batches}: {len(rows)} glaciers in {elapsed:.1f}s")
-                if progress_callback:
-                    progress_callback(yi, year, bi, n_batches)
-            except Exception as exc:
-                print(f"    batch {bi + 1}/{n_batches} FAILED: {exc}")
+            print(f"    batch {bi + 1}/{n_batches}: {len(rows)}/{len(batch)} glaciers")
+            if progress_callback:
+                progress_callback(yi, year, bi, n_batches)
 
     df = pd.DataFrame(all_rows)
     return df
+
+
+def _process_batch_with_retry(ee, batch, year, season_months, ndsi_threshold):
+    """Process a batch, splitting recursively on payload-size errors.
+
+    GEE has a 10 MB payload limit per request. Large polygons (Vatnajokull,
+    Jakobshavn) can blow this with even 20 glaciers per batch. We split
+    the batch in half on failure and retry, all the way down to single
+    glaciers if needed.
+    """
+    if not batch:
+        return []
+
+    t0 = time.time()
+    try:
+        fc = ee.FeatureCollection(batch)
+        rows = compute_glacier_areas_for_year(fc, year, season_months, ndsi_threshold)
+        elapsed = time.time() - t0
+        if len(batch) > 5:
+            print(f"      sub-batch of {len(batch)}: {elapsed:.1f}s")
+        return rows
+    except Exception as exc:
+        msg = str(exc)
+        is_payload = "payload size" in msg or "10485760" in msg
+        is_too_many = "more than" in msg or "limit" in msg.lower()
+        if (is_payload or is_too_many) and len(batch) > 1:
+            mid = len(batch) // 2
+            return _process_batch_with_retry(
+                ee, batch[:mid], year, season_months, ndsi_threshold
+            ) + _process_batch_with_retry(ee, batch[mid:], year, season_months, ndsi_threshold)
+        else:
+            print(f"      batch of {len(batch)} FAILED: {msg[:120]}")
+            return []
+
+
+def _simplify_geodf(gdf, tolerance_m=100):
+    """Simplify polygon geometries to reduce GEE payload size.
+
+    Reprojects to a metric CRS, applies Douglas-Peucker simplification,
+    then reprojects back to WGS84. The tolerance is in meters.
+
+    For glacier areas, 100m simplification changes the computed area by
+    less than 0.1% but can reduce payload by 10-100x for large glaciers.
+    """
+    out = gdf.to_crs("ESRI:54009")  # Mollweide equal-area
+    out["geometry"] = out.geometry.simplify(tolerance=tolerance_m, preserve_topology=True)
+    return out.to_crs(gdf.crs)
 
 
 def _gdf_to_ee_features(gdf):

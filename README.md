@@ -151,11 +151,42 @@ After running `glacier-analyze --name columbia`, you get:
 
 Plus a `columbia_caption.txt` with an auto-generated Instagram caption + hashtags, ready to post.
 
-### Paper finding: terminus type controls climate-glacier coupling
+### Phase 2 (in progress): scaling to 200,000+ glaciers for Nature Geoscience
 
-When we apply a unified satellite-climate analysis to 18 glaciers across 12 regions
-(1985–2024), the relationship between local warming rate and glacier retreat depends
-critically on glacier terminus type:
+The toolkit now supports **server-side GEE batch processing** that scales the
+climate-glacier coupling analysis to thousands of glaciers per region. Proof of
+concept on **500 glaciers across 5 regions**:
+
+| Region | n | Spearman ρ | p-value |
+|---|---|---|---|
+| Central Europe | 100 | −0.222 | **0.026** |
+| Iceland | 100 | −0.119 | 0.24 |
+| Scandinavia | 100 | +0.062 | 0.54 |
+| Low Latitudes | 100 | **+0.684** | **<10⁻¹⁴** |
+| Southern Andes | 100 | **+0.322** | **0.001** |
+| **Combined cross-region** | **500** | **−0.244** | **<10⁻⁷** |
+
+**Phase 2 finding**: Across the global warming gradient, faster-warming areas have
+faster-retreating glaciers (n=500, ρ=−0.24, p<10⁻⁷). But the relationship varies
+dramatically by climate regime — strongest in temperate alpine zones, absent in cold
+maritime zones, and reversed in tropical/SH maritime zones where humidity dominates.
+
+<p align="center">
+  <img src="docs/images/paper_fig5_per_region.png" alt="Per-region scatter grid" width="850"/>
+</p>
+
+<p align="center">
+  <em>Climate-glacier coupling varies dramatically by region. The within-region
+  signal is weak or even reversed for tropical and SH maritime glaciers.</em>
+</p>
+
+See [PAPER.md](PAPER.md) for the full Nature Geoscience roadmap.
+
+### Phase 1 finding: terminus type controls climate-glacier coupling
+
+When we apply a unified satellite-climate analysis to 18 hand-curated case-study
+glaciers across 12 regions (1985–2024), the relationship between local warming rate
+and glacier retreat depends critically on glacier terminus type:
 
 | Subset | n | Spearman ρ | p-value | Interpretation |
 |---|---|---|---|---|
