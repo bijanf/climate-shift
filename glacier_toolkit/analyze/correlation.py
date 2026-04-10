@@ -150,11 +150,16 @@ def compute_climate_sensitivity(
     }
 
 
-def cross_glacier_regression(per_glacier_results, terminus_filter=None):
+def cross_glacier_regression(per_glacier_results, terminus_filter=None, method="ols"):
     """Test the across-glacier hypothesis: faster warming → faster retreat.
 
     Pools per-glacier warming rates and retreat rates, then fits a
     cross-glacier regression.
+
+    method can be "ols" (ordinary least squares) or "theilsen"
+    (Theil-Sen median estimator, robust to outliers — recommended for
+    sensitivity analysis where reviewers may question the role of
+    extreme glaciers).
 
     Parameters
     ----------
@@ -219,16 +224,32 @@ def cross_glacier_regression(per_glacier_results, terminus_filter=None):
     sr, sp = stats.spearmanr(warming, retreat)
     fit = stats.linregress(warming, retreat)
 
+    # Optional Theil-Sen robust estimator (median of pairwise slopes)
+    if method == "theilsen":
+        ts = stats.theilslopes(retreat, warming, alpha=0.95)
+        regression_slope = float(ts.slope)
+        regression_intercept = float(ts.intercept)
+        ts_lower = float(ts.low_slope)
+        ts_upper = float(ts.high_slope)
+    else:
+        regression_slope = float(fit.slope)
+        regression_intercept = float(fit.intercept)
+        ts_lower = None
+        ts_upper = None
+
     return {
         "n_glaciers": len(rows),
         "pearson_r": float(pr),
         "pearson_p": float(pp),
         "spearman_r": float(sr),
         "spearman_p": float(sp),
-        "regression_slope": float(fit.slope),
-        "regression_intercept": float(fit.intercept),
+        "regression_slope": regression_slope,
+        "regression_intercept": regression_intercept,
         "r_squared": float(fit.rvalue**2),
         "p_value": float(fit.pvalue),
+        "method": method,
+        "theilsen_ci_lower": ts_lower,
+        "theilsen_ci_upper": ts_upper,
         "terminus_filter": terminus_filter,
     }
 

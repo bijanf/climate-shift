@@ -15,6 +15,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from ..config import PAPER_OUT_DIR
 
@@ -389,6 +390,138 @@ def figure_world_map(glacier_results, filename=None):
         ax.text(lon + 2, lat + 1, name, fontsize=6, color="#222222", transform=ccrs.PlateCarree())
 
     return _save_paper_fig(fig, filename or PAPER_OUT_DIR / "fig3_world_map.pdf")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Figure 4: Sensitivity forest plot
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def figure_sensitivity_forest(sensitivity_df, filename=None):
+    """Forest plot showing how the central finding varies across variants.
+
+    The y-axis lists each methodology variant; the x-axis shows the
+    land-terminating Spearman ρ. Significant variants (p<0.05) are
+    drawn in solid blue; non-significant in faded gray. The default
+    (paper) variant is highlighted.
+
+    A vertical reference line at ρ = 0 marks the null hypothesis
+    (no climate-glacier coupling).
+
+    Parameters
+    ----------
+    sensitivity_df : DataFrame
+        From sensitivity.run_sensitivity_sweep().
+    filename : Path, optional
+
+    Returns
+    -------
+    Path
+    """
+    apply_paper_style()
+
+    df = (
+        sensitivity_df.copy()
+        .sort_values(["category", "name"], ascending=[True, False])
+        .reset_index(drop=True)
+    )
+
+    n = len(df)
+    fig, ax = plt.subplots(figsize=(7, max(3, n * 0.35)))
+
+    # Color by significance
+    colors = []
+    for _, row in df.iterrows():
+        if pd.isna(row["spearman_p_land"]):
+            colors.append("#cccccc")
+        elif row["spearman_p_land"] < 0.05:
+            colors.append("#1976D2")
+        else:
+            colors.append("#9E9E9E")
+
+    y_positions = np.arange(n)
+
+    # Draw points and significance markers
+    for i, (_, row) in enumerate(df.iterrows()):
+        rho = row["spearman_rho_land"]
+        if pd.isna(rho):
+            continue
+        ax.scatter(
+            rho,
+            i,
+            s=120,
+            color=colors[i],
+            edgecolors="white",
+            linewidths=0.8,
+            zorder=3,
+        )
+        # Annotate with p-value and n
+        n_land = row["n_land"]
+        p_val = row["spearman_p_land"]
+        annotation = f"  ρ={rho:+.2f} (p={p_val:.3f}, n={int(n_land)})"
+        ax.text(
+            rho,
+            i,
+            annotation,
+            fontsize=7,
+            color="#444444",
+            va="center",
+            ha="left",
+        )
+
+    # Highlight the default (paper) variant
+    default_idx = df[df["category"] == "default"].index
+    if len(default_idx) > 0:
+        di = default_idx[0]
+        ax.axhspan(di - 0.4, di + 0.4, alpha=0.10, color="#1976D2", zorder=1)
+
+    # Vertical reference lines
+    ax.axvline(
+        0, color="#444444", linewidth=0.8, linestyle="-", zorder=2, label="ρ = 0 (no coupling)"
+    )
+    ax.axvline(-0.5, color="#888888", linewidth=0.5, linestyle=":", zorder=1)
+    ax.axvline(-1, color="#888888", linewidth=0.5, linestyle=":", zorder=1)
+
+    # Axis formatting
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(df["name"], fontsize=8)
+    ax.set_xlabel("Land-terminating Spearman ρ (warming rate vs retreat rate)")
+    ax.set_xlim(-1.1, 0.4)
+    ax.invert_yaxis()
+    ax.grid(True, axis="x", alpha=0.3, linewidth=0.4)
+    ax.set_title(
+        "Sensitivity of central finding to methodology choices",
+        fontsize=10,
+        pad=8,
+    )
+
+    # Custom legend
+    from matplotlib.lines import Line2D
+
+    legend_elements = [
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#1976D2",
+            markersize=8,
+            label="Significant (p < 0.05)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#9E9E9E",
+            markersize=8,
+            label="Not significant",
+        ),
+    ]
+    ax.legend(handles=legend_elements, loc="lower left", fontsize=7, framealpha=0.95)
+
+    fig.tight_layout()
+    return _save_paper_fig(fig, filename or PAPER_OUT_DIR / "fig4_sensitivity_forest.pdf")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

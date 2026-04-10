@@ -92,6 +92,7 @@ glacier-global = "glacier_toolkit.pipelines.run_global_overview:main"
 glacier-glof = "glacier_toolkit.pipelines.run_andes_glof:main"
 glacier-social = "glacier_toolkit.pipelines.run_social_post:main"
 glacier-paper = "glacier_toolkit.pipelines.run_paper:main"
+glacier-sensitivity = "glacier_toolkit.pipelines.run_sensitivity:main"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Hatchling — package discovery
