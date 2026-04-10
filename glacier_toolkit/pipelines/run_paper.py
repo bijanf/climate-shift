@@ -117,9 +117,12 @@ def main():
         # ── Glacier area time series ──
         if ndsi_files:
             try:
-                # Fast path + polygon clipping for paper-grade results
+                # Fast path + polygon clipping + 3-year rolling median
                 ts_df = build_area_timeseries(
-                    ndsi_files, fast=True, glacier_polygon=glacier_polygon
+                    ndsi_files,
+                    fast=True,
+                    glacier_polygon=glacier_polygon,
+                    rolling_window=3,
                 )
                 change = compute_area_change(ts_df)
                 trend = fit_linear_trend(ts_df)

@@ -122,6 +122,7 @@ def build_area_timeseries(
     threshold=0.4,
     fast=False,
     glacier_polygon=None,
+    rolling_window=None,
 ):
     """Build a glacier area time series from a dict of NDSI GeoTIFFs.
 
@@ -137,11 +138,18 @@ def build_area_timeseries(
     glacier_polygon : geopandas.GeoDataFrame, optional
         If provided, clip each annual NDSI raster to this polygon before
         computing the area. Strongly recommended for paper-grade analysis.
+    rolling_window : int, optional
+        If provided, apply a rolling median over this many years to smooth
+        year-to-year noise from variable seasonal snow cover. Recommended
+        value: 3 (3-year rolling median). The 'area_km2_raw' column
+        preserves the unsmoothed values.
 
     Returns
     -------
     pandas.DataFrame
         Columns: year, area_km2, uncertainty_km2, n_pixels.
+        If rolling_window is set, also includes area_km2_raw with the
+        unsmoothed values.
     """
     records = []
     for year in sorted(ndsi_files.keys()):
@@ -162,6 +170,14 @@ def build_area_timeseries(
     df = pd.DataFrame(records)
     if len(df) > 0:
         df = df.sort_values("year").reset_index(drop=True)
+
+    # Apply rolling median smoothing if requested
+    if rolling_window and rolling_window > 1 and len(df) > 0:
+        df["area_km2_raw"] = df["area_km2"].copy()
+        df["area_km2"] = (
+            df["area_km2"].rolling(window=rolling_window, center=True, min_periods=1).median()
+        )
+
     return df
 
 

@@ -59,25 +59,39 @@ def _get_ee():
 # ── Polygon fetching ─────────────────────────────────────────────────────────
 
 
-def fetch_largest_polygon_in_bbox(bbox, max_features=10):
+def fetch_largest_polygon_in_bbox(bbox, max_features=10, prefer="historical_max"):
     """Fetch the GLIMS polygon with the largest area within a bounding box.
 
     For a registry glacier, the largest polygon at the named location is
-    almost always the glacier we want. Multi-temporal outlines from
-    different survey dates are de-duplicated by glac_id, keeping the
-    most recent.
+    almost always the glacier we want. GLIMS contains multi-temporal
+    outlines per glacier (from different survey dates), so the same glacier
+    appears multiple times.
+
+    The `prefer` parameter chooses how to handle multi-temporal outlines:
+
+    - "historical_max" (default): Pick the absolute largest polygon, which
+      is typically the oldest survey of the largest glacier in the bbox.
+      This captures the historical maximum extent before retreat began,
+      which is the right reference for measuring retreat over the satellite
+      record. Critical for the paper analysis.
+
+    - "latest_per_id": De-duplicate by glac_id keeping the most recent
+      survey, then pick the largest of the deduplicated set. Use when
+      you want the current state, not the historical max.
 
     Parameters
     ----------
     bbox : tuple
         (west, south, east, north) in degrees.
     max_features : int
-        How many candidates to fetch (we then pick the largest by glac_id).
+        How many candidates to fetch from GEE.
+    prefer : str
+        "historical_max" or "latest_per_id".
 
     Returns
     -------
     geopandas.GeoDataFrame
-        Single-row GeoDataFrame with the largest polygon, or empty if
+        Single-row GeoDataFrame with the chosen polygon, or empty if
         no glaciers were found in the bbox.
     """
     ee = _get_ee()
@@ -86,31 +100,37 @@ def fetch_largest_polygon_in_bbox(bbox, max_features=10):
     aoi = ee.Geometry.Rectangle([w, s, e, n])
     glims = ee.FeatureCollection(GLIMS_GEE_ASSET).filterBounds(aoi)
 
-    # Sort by db_area descending; this brings the named glacier to the top
+    # Sort by db_area descending; brings the largest polygons to the top
     candidates = glims.sort("db_area", False).limit(max_features).getInfo()
 
     if not candidates.get("features"):
         return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
 
-    # De-duplicate by glac_id, keeping the entry with the latest analysis time
-    by_id = {}
-    for feat in candidates["features"]:
-        props = feat["properties"]
-        glac_id = props.get("glac_id")
-        if not glac_id:
-            continue
-
-        anlys = props.get("anlys_time") or ""
-        existing = by_id.get(glac_id)
-        if existing is None or (anlys > existing[0].get("anlys_time", "")):
-            by_id[glac_id] = (props, feat["geometry"])
-
-    if not by_id:
-        return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
-
-    # Pick the largest of the deduplicated set
-    largest_id = max(by_id, key=lambda k: by_id[k][0].get("db_area", 0))
-    props, geom = by_id[largest_id]
+    if prefer == "historical_max":
+        # Just take the absolute largest polygon — this is the historical
+        # maximum extent for the named glacier, since glaciers shrink over
+        # time and the largest survey is almost always the oldest one.
+        feat = candidates["features"][0]
+        props, geom = feat["properties"], feat["geometry"]
+    elif prefer == "latest_per_id":
+        # De-duplicate by glac_id, keeping the entry with the latest analysis
+        by_id = {}
+        for feat in candidates["features"]:
+            props = feat["properties"]
+            glac_id = props.get("glac_id")
+            if not glac_id:
+                continue
+            anlys = props.get("anlys_time") or ""
+            existing = by_id.get(glac_id)
+            if existing is None or (anlys > existing[0].get("anlys_time", "")):
+                by_id[glac_id] = (props, feat["geometry"])
+        if not by_id:
+            return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
+        # Then pick the largest of the deduplicated set
+        largest_id = max(by_id, key=lambda k: by_id[k][0].get("db_area", 0))
+        props, geom = by_id[largest_id]
+    else:
+        raise ValueError(f"Unknown prefer mode: {prefer}")
 
     # Build GeoDataFrame from the GeoJSON geometry
     from shapely.geometry import shape
@@ -123,7 +143,7 @@ def fetch_largest_polygon_in_bbox(bbox, max_features=10):
     return gdf
 
 
-def fetch_glims_for_glacier(glacier_config, cache_dir=None):
+def fetch_glims_for_glacier(glacier_config, cache_dir=None, prefer="historical_max"):
     """Fetch the GLIMS polygon for a registry glacier, caching the result.
 
     Parameters
@@ -132,6 +152,11 @@ def fetch_glims_for_glacier(glacier_config, cache_dir=None):
         A glacier entry from GLACIER_REGISTRY (must have 'bbox' and 'name').
     cache_dir : Path, optional
         Where to save the cached GeoJSON. Defaults to GLIMS_DIR.
+    prefer : str
+        Which polygon to prefer when multiple exist:
+        - "historical_max" (default): largest historical extent — best for
+          measuring retreat from the maximum extent over time
+        - "latest_per_id": most recent survey per glac_id
 
     Returns
     -------
@@ -145,7 +170,7 @@ def fetch_glims_for_glacier(glacier_config, cache_dir=None):
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     safe_name = glacier_config["name"].replace(" ", "_").replace("/", "-").lower()
-    cache_path = cache_dir / f"glims_{safe_name}.geojson"
+    cache_path = cache_dir / f"glims_{safe_name}_{prefer}.geojson"
 
     if cache_path.exists():
         try:
@@ -155,14 +180,15 @@ def fetch_glims_for_glacier(glacier_config, cache_dir=None):
         except Exception:
             pass
 
-    print(f"  Fetching GLIMS polygon for {glacier_config['name']} from GEE...")
-    gdf = fetch_largest_polygon_in_bbox(glacier_config["bbox"])
+    print(f"  Fetching GLIMS polygon for {glacier_config['name']} from GEE ({prefer})...")
+    gdf = fetch_largest_polygon_in_bbox(glacier_config["bbox"], prefer=prefer)
 
     if len(gdf) > 0:
         gdf.to_file(cache_path, driver="GeoJSON")
         area_db = gdf.iloc[0].get("db_area", float("nan"))
         glac_name = gdf.iloc[0].get("glac_name", "Unnamed")
-        print(f"    Found: {glac_name} (db_area={area_db:.2f} km²)")
+        anlys = gdf.iloc[0].get("anlys_time", "?")
+        print(f"    Found: {glac_name} (db_area={area_db:.2f} km², survey={anlys})")
     else:
         print(f"    No GLIMS polygons found in bbox {glacier_config['bbox']}")
 
