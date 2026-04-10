@@ -122,7 +122,7 @@ def generate_timelapse_frames(
             _draw_contour(ax, data["mask"], C_ICE, 1.5, extent)
 
         # North arrow
-        add_north_arrow(ax, x=0.94, y=0.88, size=0.05)
+        add_north_arrow(ax, x=0.88, y=0.83, size=0.10)
 
         ax.axis("off")
 

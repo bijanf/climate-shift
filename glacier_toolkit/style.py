@@ -228,22 +228,23 @@ def add_colorbar(fig, mappable, cb_unit="", vmin=0, vmax=1, extend="neither", po
 # ══════════════════════════════════════════════════════════════════════════════
 
 
-def add_north_arrow(ax, x=0.92, y=0.88, size=0.08, color=None, labelcolor=None):
-    """Draw a clear, visible north arrow on a matplotlib axes.
+def add_north_arrow(ax, x=0.90, y=0.85, size=0.14, color=None, labelcolor=None):
+    """Draw a clear, prominent north arrow on a matplotlib axes.
 
     Designed for image axes (e.g. satellite raster overlays) where the
     imagery is north-up — which is the standard for projected satellite
     rasters from Landsat, Sentinel-2, and most GIS workflows.
 
-    The arrow is drawn on a subtle dark background panel so it remains
-    visible against both bright snow/ice and dark rock/water.
+    The arrow is drawn on a dark rounded background panel so it remains
+    visible against both bright snow/ice and dark rock/water, and is
+    sized to remain legible in small README/social media previews.
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
         Target axes.
     x, y : float
-        Center position in axes coordinates (0-1). Default: top-right corner.
+        Center position in axes coordinates (0-1). Default: top-right.
     size : float
         Arrow length in axes coordinates.
     color : str, optional
@@ -258,45 +259,47 @@ def add_north_arrow(ax, x=0.92, y=0.88, size=0.08, color=None, labelcolor=None):
     if labelcolor is None:
         labelcolor = "#FFFFFF"
 
-    # Background panel for contrast (dark, semi-transparent)
-    pad = size * 0.55
+    # Larger background panel for visibility
+    pad_x = size * 0.65
+    pad_y_below = size * 0.65
+    pad_y_above = size * 1.2  # extra room for the N label
     bg = mpatches.FancyBboxPatch(
-        (x - pad, y - size * 0.6),
-        2 * pad,
-        size * 1.9,
-        boxstyle="round,pad=0.005,rounding_size=0.012",
+        (x - pad_x, y - pad_y_below),
+        2 * pad_x,
+        pad_y_below + pad_y_above,
+        boxstyle="round,pad=0.01,rounding_size=0.02",
         transform=ax.transAxes,
         facecolor=C_BG,
-        edgecolor=C_LIGHT,
-        linewidth=0.8,
-        alpha=0.85,
+        edgecolor=C_ICE,
+        linewidth=1.5,
+        alpha=0.9,
         zorder=10,
     )
     ax.add_patch(bg)
 
-    # Arrow shaft + head pointing up
+    # Arrow shaft + head pointing up — thick and bold
     ax.annotate(
         "",
         xy=(x, y + size * 0.6),
-        xytext=(x, y - size * 0.45),
+        xytext=(x, y - size * 0.5),
         xycoords="axes fraction",
         arrowprops=dict(
-            arrowstyle="-|>,head_length=0.6,head_width=0.35",
+            arrowstyle="-|>,head_length=0.7,head_width=0.45",
             color=color,
-            linewidth=2.2,
-            mutation_scale=18,
+            linewidth=3.5,
+            mutation_scale=22,
         ),
         annotation_clip=False,
         zorder=11,
     )
 
-    # "N" label above the arrow head
+    # Big "N" label above the arrow head
     ax.text(
         x,
-        y + size * 0.85,
+        y + size * 0.78,
         "N",
         transform=ax.transAxes,
-        fontsize=13,
+        fontsize=22,
         fontweight="bold",
         color=labelcolor,
         ha="center",
