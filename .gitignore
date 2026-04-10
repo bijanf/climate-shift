@@ -21,6 +21,17 @@ __pycache__/
 .eggs/
 dist/
 build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg
+.tox/
+.venv/
+venv/
+env/
 
 # IDE
 .vscode/

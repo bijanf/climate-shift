@@ -1,0 +1,42 @@
+name: New glacier in registry
+description: Suggest a glacier to add to the built-in registry
+title: "[Glacier]: "
+labels: ["new-glacier"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Glacier name
+      placeholder: e.g. "Quelccaya Ice Cap"
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Lat / Lon
+      placeholder: e.g. "-13.9, -70.8"
+    validations:
+      required: true
+
+  - type: input
+    id: region
+    attributes:
+      label: Region
+      placeholder: e.g. "Andes (Peru)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: significance
+    attributes:
+      label: Why is this glacier notable?
+      description: Scientific, cultural, or visual significance for the project.
+    validations:
+      required: true
+
+  - type: input
+    id: references
+    attributes:
+      label: References
+      description: Papers, GLIMS ID, or other sources documenting this glacier

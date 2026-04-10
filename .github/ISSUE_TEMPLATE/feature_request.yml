@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: What problem does this solve?
+      description: Why is this feature needed? What is the use case?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you implement this? What would the API look like?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider, and why aren't they sufficient?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Satellite acquisition (Landsat / Sentinel-2)
+        - Glacier classification (NDSI)
+        - Lake detection (NDWI)
+        - GLOF risk assessment
+        - Visualization / Instagram slides
+        - Statistics
+        - Documentation
+        - CI / Tooling
+        - Other
+    validations:
+      required: true
