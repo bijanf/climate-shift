@@ -150,6 +150,6 @@ Install dev dependencies: `pip install -e ".[dev]"`
 
 ## Next steps
 
-- Read [docs/ARCHITECTURE.md](ARCHITECTURE.md) to understand the module layout
-- Browse [tests/](../tests/) for usage examples
-- See [CONTRIBUTING.md](../CONTRIBUTING.md) to add new glaciers or features
+- Read [Architecture](ARCHITECTURE.md) to understand the module layout
+- Browse the [tests](https://github.com/bijanf/climate-shift/tree/main/tests) for usage examples
+- See [Contributing](contributing.md) to add new glaciers or features

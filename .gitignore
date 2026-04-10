@@ -16,6 +16,13 @@ glacier_outputs/
 # Stray PNGs in root (climate shift outputs go in outputs/climate_shift/)
 /*.png
 
+# MkDocs build output (deployed via GitHub Actions)
+site/
+
+# Synced from top-level by docs workflow — do not commit
+docs/contributing.md
+docs/changelog.md
+
 # Python
 __pycache__/
 *.pyc
