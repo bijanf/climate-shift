@@ -5,18 +5,29 @@ Creates a Robinson-projection world map showing all tracked glaciers,
 colored by percentage area lost, with inset panels for the most dramatic cases.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
 from pathlib import Path
 
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+import numpy as np
+
 from ..config import (
-    C_BG, C_TEXT, C_SUB, C_LIGHT, C_ACC, GLACIER_REGISTRY,
-    IG_DPI, IG_FIG, GLOBAL_OUT_DIR, FONT_FAMILY,
+    C_BG,
+    C_LIGHT,
+    C_SUB,
+    FONT_FAMILY,
+    GLACIER_REGISTRY,
+    GLOBAL_OUT_DIR,
+    IG_DPI,
+    IG_FIG,
 )
 from ..style import (
-    global_map_figure, add_glacier_marker, add_title_zone,
-    add_source_line, LOSS_CMAP, apply_theme,
+    LOSS_CMAP,
+    add_glacier_marker,
+    add_source_line,
+    add_title_zone,
+    apply_theme,
+    global_map_figure,
 )
 
 
@@ -51,8 +62,11 @@ def make_global_dashboard(
     apply_theme()
 
     # Compute summary stats
-    pct_losses = [abs(s.get("area_change_pct", 0)) for s in glacier_stats.values()
-                  if s.get("area_change_pct") is not None]
+    pct_losses = [
+        abs(s.get("area_change_pct", 0))
+        for s in glacier_stats.values()
+        if s.get("area_change_pct") is not None
+    ]
     avg_loss = np.mean(pct_losses) if pct_losses else 0
     n_glaciers = len(glacier_stats)
     total_lost_km2 = sum(
@@ -79,15 +93,15 @@ def make_global_dashboard(
         pct = abs(stats.get("area_change_pct", 0))
         add_glacier_marker(
             ax,
-            glacier["lat"], glacier["lon"],
+            glacier["lat"],
+            glacier["lon"],
             glacier["name"].split("/")[0].split("(")[0].strip(),
             value_pct=pct,
             fontsize=7,
         )
 
     # Colorbar for % loss
-    sm = plt.cm.ScalarMappable(cmap=LOSS_CMAP,
-                                norm=plt.Normalize(vmin=0, vmax=100))
+    sm = plt.cm.ScalarMappable(cmap=LOSS_CMAP, norm=plt.Normalize(vmin=0, vmax=100))
     sm.set_array([])
     cax = fig.add_axes([0.15, 0.065, 0.55, 0.015])
     cb = fig.colorbar(sm, cax=cax, orientation="horizontal")
@@ -96,15 +110,20 @@ def make_global_dashboard(
     cb.set_ticklabels(["0%", "25%", "50%", "75%", "100%"])
     cb.ax.tick_params(labelsize=9, colors=C_SUB, length=0)
     cax.set_facecolor(C_BG)
-    fig.text(0.73, 0.065, "area lost", fontsize=10, color=C_SUB,
-             va="center", family=FONT_FAMILY)
+    fig.text(0.73, 0.065, "area lost", fontsize=10, color=C_SUB, va="center", family=FONT_FAMILY)
 
     # Summary stats box
-    stats_text = (f"{n_glaciers} glaciers tracked\n"
-                  f"{total_lost_km2:,.0f} km² total ice lost")
-    fig.text(0.50, 0.038, stats_text,
-             fontsize=8, ha="center", color=C_SUB, family=FONT_FAMILY,
-             linespacing=1.5)
+    stats_text = f"{n_glaciers} glaciers tracked\n{total_lost_km2:,.0f} km² total ice lost"
+    fig.text(
+        0.50,
+        0.038,
+        stats_text,
+        fontsize=8,
+        ha="center",
+        color=C_SUB,
+        family=FONT_FAMILY,
+        linespacing=1.5,
+    )
 
     # Source line
     add_source_line(fig, source_text)
@@ -146,20 +165,24 @@ def make_region_dashboard(
     """
     apply_theme()
 
-    pct_losses = [abs(s.get("area_change_pct", 0)) for s in glacier_stats.values()
-                  if s.get("area_change_pct") is not None]
+    pct_losses = [
+        abs(s.get("area_change_pct", 0))
+        for s in glacier_stats.values()
+        if s.get("area_change_pct") is not None
+    ]
     avg_loss = np.mean(pct_losses) if pct_losses else 0
 
     fig = plt.figure(figsize=IG_FIG)
     fig.patch.set_facecolor(C_BG)
 
-    add_title_zone(fig, f"−{avg_loss:.0f}%",
-                   f"{region_name}: Glacier Retreat")
+    add_title_zone(fig, f"−{avg_loss:.0f}%", f"{region_name}: Glacier Retreat")
 
-    ax = fig.add_axes([0.03, 0.10, 0.94, 0.75],
-                      projection=ccrs.Orthographic(center_lon, center_lat))
+    ax = fig.add_axes(
+        [0.03, 0.10, 0.94, 0.75], projection=ccrs.Orthographic(center_lon, center_lat)
+    )
 
     from ..style import make_glacier_map
+
     make_glacier_map(ax, extent)
 
     for key, stats in glacier_stats.items():
@@ -167,9 +190,9 @@ def make_region_dashboard(
         if glacier is None:
             continue
         pct = abs(stats.get("area_change_pct", 0))
-        add_glacier_marker(ax, glacier["lat"], glacier["lon"],
-                           glacier["name"].split("/")[0].strip(),
-                           value_pct=pct)
+        add_glacier_marker(
+            ax, glacier["lat"], glacier["lon"], glacier["name"].split("/")[0].strip(), value_pct=pct
+        )
 
     add_source_line(fig, "Data: Landsat (USGS/NASA) · GLIMS (NSIDC)")
 

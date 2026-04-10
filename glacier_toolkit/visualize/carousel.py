@@ -11,17 +11,28 @@ Also auto-generates Instagram captions with hashtags,
 matching the format in instagram_captions.txt.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+
 from ..config import (
-    C_BG, C_TEXT, C_SUB, C_LIGHT, C_ACC, C_ICE, C_COOL, C_WARM,
-    IG_DPI, IG_FIG, IG_OUT_DIR, FONT_FAMILY,
+    C_ACC,
+    C_BG,
+    C_ICE,
+    C_LIGHT,
+    C_SUB,
+    C_TEXT,
+    FONT_FAMILY,
+    IG_DPI,
+    IG_FIG,
+    IG_OUT_DIR,
 )
 from ..style import (
-    strip_axes, add_title_zone, add_source_line,
-    add_slide_number, apply_theme,
+    add_slide_number,
+    add_source_line,
+    add_title_zone,
+    apply_theme,
+    strip_axes,
 )
 
 
@@ -82,38 +93,40 @@ def make_timeseries_slide(
 
     if "uncertainty_km2" in df.columns:
         unc = df["uncertainty_km2"].values
-        ax.fill_between(years, areas - unc, areas + unc,
-                        alpha=0.2, color=C_ICE, zorder=2)
+        ax.fill_between(years, areas - unc, areas + unc, alpha=0.2, color=C_ICE, zorder=2)
 
     # Trend line with CI band
     trend_y = trend_info.get("intercept_km2", 0) + slope * years.astype(float)
-    ax.plot(years, trend_y, color=C_ACC, linewidth=1.5, linestyle="--",
-            zorder=4, label=f"Trend: {slope:.2f} km²/yr")
+    ax.plot(
+        years,
+        trend_y,
+        color=C_ACC,
+        linewidth=1.5,
+        linestyle="--",
+        zorder=4,
+        label=f"Trend: {slope:.2f} km²/yr",
+    )
 
     ci_lo_y = trend_info.get("intercept_km2", 0) + ci_lo * years.astype(float)
     ci_hi_y = trend_info.get("intercept_km2", 0) + ci_hi * years.astype(float)
-    ax.fill_between(years, ci_lo_y, ci_hi_y, alpha=0.15, color=C_ACC,
-                    zorder=1)
+    ax.fill_between(years, ci_lo_y, ci_hi_y, alpha=0.15, color=C_ACC, zorder=1)
 
     ax.set_xlabel("Year", fontsize=12, color=C_SUB)
     ax.set_ylabel("Glacier Area (km²)", fontsize=12, color=C_SUB)
     ax.tick_params(colors=C_SUB, labelsize=10)
 
     # Legend
-    ax.legend(loc="upper right", fontsize=9, facecolor=C_BG,
-              edgecolor=C_LIGHT, labelcolor=C_TEXT)
+    ax.legend(loc="upper right", fontsize=9, facecolor=C_BG, edgecolor=C_LIGHT, labelcolor=C_TEXT)
 
     # Statistical annotation
     mk_trend = trend_info.get("mk_trend", "")
     mk_p = trend_info.get("mk_p_value", 1)
     sig_text = f"Mann-Kendall: {mk_trend} (p={mk_p:.4f})"
-    fig.text(0.50, 0.13, sig_text,
-             fontsize=9, ha="center", color=C_SUB, family=FONT_FAMILY)
+    fig.text(0.50, 0.13, sig_text, fontsize=9, ha="center", color=C_SUB, family=FONT_FAMILY)
 
     # CI annotation
     ci_text = f"95% CI on trend: [{ci_lo:.3f}, {ci_hi:.3f}] km²/yr"
-    fig.text(0.50, 0.10, ci_text,
-             fontsize=8, ha="center", color=C_LIGHT, family=FONT_FAMILY)
+    fig.text(0.50, 0.10, ci_text, fontsize=8, ha="center", color=C_LIGHT, family=FONT_FAMILY)
 
     add_source_line(fig, "Data: Landsat (USGS/NASA) · Analysis: glacier_toolkit")
     add_slide_number(fig, slide_num, total_slides)
@@ -155,58 +168,74 @@ def make_methodology_slide(
     fig = plt.figure(figsize=IG_FIG)
     fig.patch.set_facecolor(C_BG)
 
-    add_title_zone(fig, "How?", "Methodology & Data Sources",
-                   big_fontsize=40)
+    add_title_zone(fig, "How?", "Methodology & Data Sources", big_fontsize=40)
 
     # Content as structured text blocks
     y = 0.78
     line_height = 0.045
 
     sections = [
-        ("SATELLITE DATA", [
-            "Landsat 5/7/8/9 (USGS/NASA) — 30m resolution, 1984–present",
-            "Processed via Google Earth Engine (cloud-masked median composites)",
-        ]),
-        ("GLACIER DETECTION", [
-            "NDSI = (Green − SWIR) / (Green + SWIR)",
-            "Threshold: 0.4 (Dozier 1989) + connected-component filtering",
-            "Boundary validation: GLIMS database (NSIDC, 200k+ glaciers)",
-        ]),
-        ("STATISTICS", [
-            f"Period: {stats_summary.get('baseline_year', '1985')} – "
-            f"{stats_summary.get('modern_year', '2024')}",
-            "Trend: Linear regression with 10,000-sample bootstrap 95% CI",
-            "Significance: Mann-Kendall monotonic trend test",
-            "Uncertainty: Boundary-pixel method (Granshaw & Fountain 2006)",
-        ]),
-        ("TOOLS", [
-            "Python · Google Earth Engine · QGIS · glacier_toolkit",
-            "Open-source: github.com — all code and data freely available",
-        ]),
+        (
+            "SATELLITE DATA",
+            [
+                "Landsat 5/7/8/9 (USGS/NASA) — 30m resolution, 1984–present",
+                "Processed via Google Earth Engine (cloud-masked median composites)",
+            ],
+        ),
+        (
+            "GLACIER DETECTION",
+            [
+                "NDSI = (Green − SWIR) / (Green + SWIR)",
+                "Threshold: 0.4 (Dozier 1989) + connected-component filtering",
+                "Boundary validation: GLIMS database (NSIDC, 200k+ glaciers)",
+            ],
+        ),
+        (
+            "STATISTICS",
+            [
+                f"Period: {stats_summary.get('baseline_year', '1985')} – "
+                f"{stats_summary.get('modern_year', '2024')}",
+                "Trend: Linear regression with 10,000-sample bootstrap 95% CI",
+                "Significance: Mann-Kendall monotonic trend test",
+                "Uncertainty: Boundary-pixel method (Granshaw & Fountain 2006)",
+            ],
+        ),
+        (
+            "TOOLS",
+            [
+                "Python · Google Earth Engine · QGIS · glacier_toolkit",
+                "Open-source: github.com — all code and data freely available",
+            ],
+        ),
     ]
 
     for section_title, items in sections:
-        fig.text(0.08, y, section_title,
-                 fontsize=13, fontweight="bold", color=C_ACC,
-                 family=FONT_FAMILY)
+        fig.text(
+            0.08, y, section_title, fontsize=13, fontweight="bold", color=C_ACC, family=FONT_FAMILY
+        )
         y -= line_height * 0.8
 
         for item in items:
-            fig.text(0.08, y, f"  {item}",
-                     fontsize=9.5, color=C_TEXT, family=FONT_FAMILY,
-                     wrap=True)
+            fig.text(
+                0.08, y, f"  {item}", fontsize=9.5, color=C_TEXT, family=FONT_FAMILY, wrap=True
+            )
             y -= line_height
 
         y -= line_height * 0.5  # section gap
 
     # Inspired-by credit
-    fig.text(0.50, 0.08,
-             "Inspired by Chasing Ice & Chasing Time",
-             fontsize=10, ha="center", color=C_SUB, style="italic",
-             family=FONT_FAMILY)
+    fig.text(
+        0.50,
+        0.08,
+        "Inspired by Chasing Ice & Chasing Time",
+        fontsize=10,
+        ha="center",
+        color=C_SUB,
+        style="italic",
+        family=FONT_FAMILY,
+    )
 
-    add_source_line(fig,
-                    "glacier_toolkit v0.1 · Climate Shift Project · 2026")
+    add_source_line(fig, "glacier_toolkit v0.1 · Climate Shift Project · 2026")
     add_slide_number(fig, slide_num, total_slides)
 
     if filename is None:
@@ -260,11 +289,22 @@ def generate_caption(glacier_name, stats, hashtags=None):
 
     if hashtags is None:
         hashtags = [
-            "#ClimateChange", "#GlacierRetreat", "#ClimateCrisis",
-            "#Satellite", "#RemoteSensing", "#NASA", "#Landsat",
-            "#ChasingIce", "#GlacierMelting", "#ClimateScience",
-            "#DataVisualization", "#EarthObservation", "#Cryosphere",
-            "#ClimateAction", "#SciComm", "#OpenScience",
+            "#ClimateChange",
+            "#GlacierRetreat",
+            "#ClimateCrisis",
+            "#Satellite",
+            "#RemoteSensing",
+            "#NASA",
+            "#Landsat",
+            "#ChasingIce",
+            "#GlacierMelting",
+            "#ClimateScience",
+            "#DataVisualization",
+            "#EarthObservation",
+            "#Cryosphere",
+            "#ClimateAction",
+            "#SciComm",
+            "#OpenScience",
         ]
 
     caption += " ".join(hashtags)

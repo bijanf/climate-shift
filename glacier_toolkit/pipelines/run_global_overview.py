@@ -12,30 +12,31 @@ Usage:
 
 import argparse
 import json
-from pathlib import Path
 
 import numpy as np
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate global glacier retreat dashboard"
-    )
+    parser = argparse.ArgumentParser(description="Generate global glacier retreat dashboard")
     parser.add_argument("--year-start", type=int, default=1990)
     parser.add_argument("--year-end", type=int, default=2024)
     parser.add_argument("--skip-download", action="store_true")
-    parser.add_argument("--glaciers", nargs="*", default=None,
-                        help="Specific glacier keys to include (default: all)")
+    parser.add_argument(
+        "--glaciers",
+        nargs="*",
+        default=None,
+        help="Specific glacier keys to include (default: all)",
+    )
     args = parser.parse_args()
 
-    from glacier_toolkit.config import GLACIER_REGISTRY, OUTPUTS_DIR, GLOBAL_OUT_DIR
+    from glacier_toolkit.config import GLACIER_REGISTRY, GLOBAL_OUT_DIR, OUTPUTS_DIR
 
     keys = args.glaciers if args.glaciers else list(GLACIER_REGISTRY.keys())
 
-    print(f"\n{'='*60}")
-    print(f"  GLOBAL GLACIER RETREAT OVERVIEW")
+    print(f"\n{'=' * 60}")
+    print("  GLOBAL GLACIER RETREAT OVERVIEW")
     print(f"  Analyzing {len(keys)} glaciers across all continents")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     glacier_stats = {}
 
@@ -67,7 +68,8 @@ def main():
         try:
             from glacier_toolkit.acquire.landsat import export_timeseries
             from glacier_toolkit.analyze.glacier_area import (
-                build_area_timeseries, compute_area_change,
+                build_area_timeseries,
+                compute_area_change,
             )
 
             if not args.skip_download:
@@ -100,16 +102,16 @@ def main():
                 }
                 print(f"  Result: {change['change_pct']:.1f}% area change")
             else:
-                print(f"  Skipped: no data available")
+                print("  Skipped: no data available")
 
         except Exception as exc:
             print(f"  Error: {exc}")
 
     # Generate global dashboard
     if glacier_stats:
-        print(f"\n{'='*60}")
-        print(f"  Generating Global Dashboard")
-        print(f"{'='*60}\n")
+        print(f"\n{'=' * 60}")
+        print("  Generating Global Dashboard")
+        print(f"{'=' * 60}\n")
 
         from glacier_toolkit.visualize.global_dashboard import make_global_dashboard
 
@@ -118,11 +120,15 @@ def main():
         # Save summary
         summary = {
             "n_glaciers": len(glacier_stats),
-            "avg_change_pct": float(np.mean([
-                abs(s["area_change_pct"])
-                for s in glacier_stats.values()
-                if s.get("area_change_pct") is not None
-            ])),
+            "avg_change_pct": float(
+                np.mean(
+                    [
+                        abs(s["area_change_pct"])
+                        for s in glacier_stats.values()
+                        if s.get("area_change_pct") is not None
+                    ]
+                )
+            ),
             "glaciers": glacier_stats,
         }
         with open(GLOBAL_OUT_DIR / "global_summary.json", "w") as f:
@@ -133,9 +139,9 @@ def main():
     else:
         print("\n  No glacier data available. Run individual analyses first.")
 
-    print(f"\n{'='*60}")
-    print(f"  GLOBAL OVERVIEW COMPLETE")
-    print(f"{'='*60}\n")
+    print(f"\n{'=' * 60}")
+    print("  GLOBAL OVERVIEW COMPLETE")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":

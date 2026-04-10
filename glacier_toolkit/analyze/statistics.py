@@ -51,8 +51,7 @@ def bootstrap_ci(a, b, n_boot=BOOTSTRAP_N, ci=CI_LEVEL, seed=BOOTSTRAP_SEED):
     return lo, hi
 
 
-def bootstrap_trend_ci(years, values, n_boot=BOOTSTRAP_N, ci=CI_LEVEL,
-                        seed=BOOTSTRAP_SEED):
+def bootstrap_trend_ci(years, values, n_boot=BOOTSTRAP_N, ci=CI_LEVEL, seed=BOOTSTRAP_SEED):
     """Bootstrap CI on the linear regression slope.
 
     Parameters
@@ -86,8 +85,9 @@ def bootstrap_trend_ci(years, values, n_boot=BOOTSTRAP_N, ci=CI_LEVEL,
     return lo, hi
 
 
-def bootstrap_statistic(data, stat_func=np.mean, n_boot=BOOTSTRAP_N,
-                         ci=CI_LEVEL, seed=BOOTSTRAP_SEED):
+def bootstrap_statistic(
+    data, stat_func=np.mean, n_boot=BOOTSTRAP_N, ci=CI_LEVEL, seed=BOOTSTRAP_SEED
+):
     """Bootstrap CI for any single-sample statistic.
 
     Parameters

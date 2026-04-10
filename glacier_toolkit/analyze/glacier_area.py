@@ -7,14 +7,17 @@ with bootstrap confidence intervals, and detects acceleration in retreat.
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
-from .ndsi import load_ndsi_geotiff, classify_glacier, compute_glacier_area_km2, compute_area_uncertainty_km2
+from .ndsi import (
+    classify_glacier,
+    compute_area_uncertainty_km2,
+    compute_glacier_area_km2,
+    load_ndsi_geotiff,
+)
 from .statistics import bootstrap_trend_ci, mann_kendall_test
 
 
-def compute_area_from_ndsi_file(ndsi_path, threshold=0.4, min_area_km2=0.01,
-                                 pixel_size_m=30):
+def compute_area_from_ndsi_file(ndsi_path, threshold=0.4, min_area_km2=0.01, pixel_size_m=30):
     """Compute glacier area and uncertainty from an NDSI GeoTIFF.
 
     Parameters
@@ -34,9 +37,9 @@ def compute_area_from_ndsi_file(ndsi_path, threshold=0.4, min_area_km2=0.01,
         Keys: 'area_km2', 'uncertainty_km2', 'n_pixels', 'threshold'.
     """
     ndsi = load_ndsi_geotiff(ndsi_path)
-    mask = classify_glacier(ndsi, threshold=threshold,
-                            min_area_km2=min_area_km2,
-                            pixel_size_m=pixel_size_m)
+    mask = classify_glacier(
+        ndsi, threshold=threshold, min_area_km2=min_area_km2, pixel_size_m=pixel_size_m
+    )
 
     area = compute_glacier_area_km2(mask, pixel_size_m)
     uncertainty = compute_area_uncertainty_km2(mask, pixel_size_m)
@@ -159,7 +162,7 @@ def fit_linear_trend(timeseries_df):
     return {
         "slope_km2_per_year": result.slope,
         "intercept_km2": result.intercept,
-        "r_squared": result.rvalue ** 2,
+        "r_squared": result.rvalue**2,
         "ci_lower": ci_lo,
         "ci_upper": ci_hi,
         "mk_trend": mk_trend,
@@ -199,18 +202,14 @@ def detect_acceleration(timeseries_df, breakpoint_year=2000):
             "is_accelerating": None,
         }
 
-    early_fit = stats.linregress(early["year"].values.astype(float),
-                                  early["area_km2"].values)
-    late_fit = stats.linregress(late["year"].values.astype(float),
-                                 late["area_km2"].values)
+    early_fit = stats.linregress(early["year"].values.astype(float), early["area_km2"].values)
+    late_fit = stats.linregress(late["year"].values.astype(float), late["area_km2"].values)
 
     # Compare slopes (more negative = faster retreat)
     factor = late_fit.slope / early_fit.slope if early_fit.slope != 0 else np.nan
 
     # Welch's t-test on area values between periods
-    _, p_value = stats.ttest_ind(early["area_km2"].values,
-                                  late["area_km2"].values,
-                                  equal_var=False)
+    _, p_value = stats.ttest_ind(early["area_km2"].values, late["area_km2"].values, equal_var=False)
 
     return {
         "early_slope": early_fit.slope,

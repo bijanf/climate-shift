@@ -27,10 +27,8 @@ def compute_flow_direction(dem):
     flow_dir = np.zeros((h, w), dtype=np.int8)
 
     # 8 neighbor offsets: N, NE, E, SE, S, SW, W, NW
-    offsets = [(-1, 0), (-1, 1), (0, 1), (1, 1),
-               (1, 0), (1, -1), (0, -1), (-1, -1)]
-    distances = [1, np.sqrt(2), 1, np.sqrt(2),
-                 1, np.sqrt(2), 1, np.sqrt(2)]
+    offsets = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
+    distances = [1, np.sqrt(2), 1, np.sqrt(2), 1, np.sqrt(2), 1, np.sqrt(2)]
 
     for r in range(1, h - 1):
         for c in range(1, w - 1):
@@ -65,8 +63,14 @@ def trace_flow_path(flow_dir, start_row, start_col, max_steps=5000):
         [(row, col), ...] coordinates along the flow path.
     """
     offsets = {
-        1: (-1, 0), 2: (-1, 1), 3: (0, 1), 4: (1, 1),
-        5: (1, 0), 6: (1, -1), 7: (0, -1), 8: (-1, -1),
+        1: (-1, 0),
+        2: (-1, 1),
+        3: (0, 1),
+        4: (1, 1),
+        5: (1, 0),
+        6: (1, -1),
+        7: (0, -1),
+        8: (-1, -1),
     }
 
     h, w = flow_dir.shape
@@ -86,8 +90,7 @@ def trace_flow_path(flow_dir, start_row, start_col, max_steps=5000):
     return path
 
 
-def find_downstream_zone(flow_dir, lake_mask, max_distance_km=50,
-                          pixel_size_m=30):
+def find_downstream_zone(flow_dir, lake_mask, max_distance_km=50, pixel_size_m=30):
     """Compute the downstream flood zone from a glacial lake.
 
     Parameters
@@ -145,7 +148,7 @@ def estimate_population_at_risk(flood_zone, population_grid, pixel_size_m=30):
     """
     total_pop = float(np.nansum(population_grid[flood_zone]))
     n_settled = int(np.sum((population_grid > 0) & flood_zone))
-    area_km2 = float(np.sum(flood_zone)) * (pixel_size_m ** 2) / 1e6
+    area_km2 = float(np.sum(flood_zone)) * (pixel_size_m**2) / 1e6
 
     return {
         "total_population": total_pop,
@@ -154,8 +157,7 @@ def estimate_population_at_risk(flood_zone, population_grid, pixel_size_m=30):
     }
 
 
-def compute_flow_distance_km(lake_centroid, settlement_coords, dem,
-                              pixel_size_m=30):
+def compute_flow_distance_km(lake_centroid, settlement_coords, dem, pixel_size_m=30):
     """Compute downstream flow distance from lake to settlement.
 
     Parameters
@@ -185,10 +187,10 @@ def compute_flow_distance_km(lake_centroid, settlement_coords, dem,
             step_dist = np.sqrt((r - prev_r) ** 2 + (c - prev_c) ** 2) * pixel_size_m
             path_length += step_dist
 
-        dist_to_settlement = np.sqrt(
-            (r - settlement_coords[0]) ** 2 +
-            (c - settlement_coords[1]) ** 2
-        ) * pixel_size_m
+        dist_to_settlement = (
+            np.sqrt((r - settlement_coords[0]) ** 2 + (c - settlement_coords[1]) ** 2)
+            * pixel_size_m
+        )
 
         if dist_to_settlement < min_dist:
             min_dist = dist_to_settlement

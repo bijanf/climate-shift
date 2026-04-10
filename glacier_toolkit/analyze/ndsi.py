@@ -10,8 +10,8 @@ Works with local GeoTIFF rasters (downloaded via acquire/landsat.py).
 """
 
 import numpy as np
+import rioxarray
 import xarray as xr
-import rioxarray  # noqa: F401 — registers .rio accessor
 from scipy import ndimage
 
 
@@ -70,7 +70,7 @@ def classify_glacier(ndsi, threshold=0.4, min_area_km2=0.01, pixel_size_m=30):
     mask = np.where(np.isnan(values), False, values > threshold)
 
     # Connected component filtering
-    min_pixels = min_area_km2 * 1e6 / (pixel_size_m ** 2)
+    min_pixels = min_area_km2 * 1e6 / (pixel_size_m**2)
     labeled, n_features = ndimage.label(mask)
 
     if n_features > 0:
@@ -121,7 +121,7 @@ def compute_glacier_area_km2(glacier_mask, pixel_size_m=30):
     float
         Glacier area in km².
     """
-    pixel_area_km2 = (pixel_size_m ** 2) / 1e6
+    pixel_area_km2 = (pixel_size_m**2) / 1e6
     return float(np.sum(glacier_mask) * pixel_area_km2)
 
 

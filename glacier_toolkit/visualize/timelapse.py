@@ -5,14 +5,21 @@ Produces one PNG per year with consistent extent, projection, and styling,
 suitable for assembly into animated GIFs or MP4 videos.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
 
 from ..config import (
-    C_BG, C_TEXT, C_SUB, C_LIGHT, C_ICE,
-    IG_DPI, IG_FIG, IG_OUT_DIR, FONT_FAMILY,
+    C_BG,
+    C_ICE,
+    C_SUB,
+    C_TEXT,
+    FONT_FAMILY,
+    IG_DPI,
+    IG_FIG,
+    IG_OUT_DIR,
 )
 from ..style import apply_theme
 
@@ -70,14 +77,31 @@ def generate_timelapse_frames(
         fig.patch.set_facecolor(C_BG)
 
         # Title with glacier name
-        fig.text(0.50, 0.97, glacier_name,
-                 fontsize=24, fontweight="bold", ha="center", va="top",
-                 color=C_TEXT, family=FONT_FAMILY)
+        fig.text(
+            0.50,
+            0.97,
+            glacier_name,
+            fontsize=24,
+            fontweight="bold",
+            ha="center",
+            va="top",
+            color=C_TEXT,
+            family=FONT_FAMILY,
+        )
 
         # Big year number
-        fig.text(0.50, 0.92, str(year),
-                 fontsize=60, fontweight="bold", ha="center", va="top",
-                 color=C_ICE, family=FONT_FAMILY, alpha=0.8)
+        fig.text(
+            0.50,
+            0.92,
+            str(year),
+            fontsize=60,
+            fontweight="bold",
+            ha="center",
+            va="top",
+            color=C_ICE,
+            family=FONT_FAMILY,
+            alpha=0.8,
+        )
 
         ax = fig.add_axes([0.03, 0.08, 0.94, 0.78])
         ax.set_facecolor(C_BG)
@@ -85,8 +109,7 @@ def generate_timelapse_frames(
         # Show RGB or NDSI mask
         if "rgb" in data and data["rgb"] is not None:
             rgb = np.clip(data["rgb"] * 1.5, 0, 1)
-            ax.imshow(rgb, extent=extent, aspect="auto",
-                      interpolation="bilinear")
+            ax.imshow(rgb, extent=extent, aspect="auto", interpolation="bilinear")
         elif "mask" in data:
             # Show mask as ice-cyan on dark background
             vis = np.zeros((h, w, 3))
@@ -102,9 +125,15 @@ def generate_timelapse_frames(
 
         # Area stat
         if "area_km2" in data:
-            fig.text(0.50, 0.05, f"{data['area_km2']:.1f} km²",
-                     fontsize=18, ha="center", color=C_SUB,
-                     family=FONT_FAMILY)
+            fig.text(
+                0.50,
+                0.05,
+                f"{data['area_km2']:.1f} km²",
+                fontsize=18,
+                ha="center",
+                color=C_SUB,
+                family=FONT_FAMILY,
+            )
 
         # Save frame
         frame_path = output_dir / f"frame_{year}.png"

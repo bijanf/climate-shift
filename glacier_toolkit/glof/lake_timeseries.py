@@ -43,7 +43,7 @@ def _match_lakes_by_centroid(detections_by_year, tolerance=15):
     lake_series = {}
 
     for i, ref in enumerate(ref_lakes):
-        label = f"lake_{i+1}"
+        label = f"lake_{i + 1}"
         records = [{"year": years[0], "area_km2": ref["area_km2"]}]
 
         ref_row = ref["centroid_row"]
@@ -56,8 +56,7 @@ def _match_lakes_by_centroid(detections_by_year, tolerance=15):
 
             for cand in candidates:
                 dist = np.sqrt(
-                    (cand["centroid_row"] - ref_row) ** 2 +
-                    (cand["centroid_col"] - ref_col) ** 2
+                    (cand["centroid_row"] - ref_row) ** 2 + (cand["centroid_col"] - ref_col) ** 2
                 )
                 if dist < best_dist:
                     best_dist = dist
@@ -95,10 +94,10 @@ def estimate_lake_volume(area_km2, method="huggel2002"):
 
     if method == "huggel2002":
         # Huggel et al. 2002: V (m³) = 0.104 * A (m²) ^ 1.42
-        volume_m3 = 0.104 * (area_m2 ** 1.42)
+        volume_m3 = 0.104 * (area_m2**1.42)
     elif method == "cook2012":
         # Cook & Quincey 2012 (Himalayan lakes)
-        volume_m3 = 0.0578 * (area_m2 ** 1.4683)
+        volume_m3 = 0.0578 * (area_m2**1.4683)
     else:
         raise ValueError(f"Unknown method: {method}")
 
@@ -122,8 +121,12 @@ def detect_rapid_growth(lake_timeseries_df, threshold_pct_per_year=5):
     """
     df = lake_timeseries_df
     if len(df) < 3:
-        return {"growth_rate_pct_per_year": np.nan, "is_rapid": False,
-                "trend_slope": np.nan, "years_analyzed": len(df)}
+        return {
+            "growth_rate_pct_per_year": np.nan,
+            "is_rapid": False,
+            "trend_slope": np.nan,
+            "years_analyzed": len(df),
+        }
 
     years = df["year"].values.astype(float)
     areas = df["area_km2"].values

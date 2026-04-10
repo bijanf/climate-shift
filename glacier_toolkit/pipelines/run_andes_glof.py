@@ -18,20 +18,15 @@ Usage:
 
 import argparse
 import json
-from pathlib import Path
 
 import numpy as np
-import pandas as pd
-
 
 # Target glaciers/lakes for the Andes GLOF paper
 ANDES_TARGETS = ["palcaraju", "hualcan", "pastoruri"]
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Andes GLOF risk assessment for scientific paper"
-    )
+    parser = argparse.ArgumentParser(description="Andes GLOF risk assessment for scientific paper")
     parser.add_argument("--year-start", type=int, default=2000)
     parser.add_argument("--year-end", type=int, default=2024)
     parser.add_argument("--skip-download", action="store_true")
@@ -39,29 +34,30 @@ def main():
 
     from glacier_toolkit.config import GLACIER_REGISTRY, OUTPUTS_DIR, PAPER_OUT_DIR
 
-    print(f"\n{'='*60}")
-    print(f"  ANDES GLOF RISK ASSESSMENT")
-    print(f"  Cordillera Blanca, Peru")
-    print(f"  For peer-reviewed publication")
-    print(f"{'='*60}\n")
+    print(f"\n{'=' * 60}")
+    print("  ANDES GLOF RISK ASSESSMENT")
+    print("  Cordillera Blanca, Peru")
+    print("  For peer-reviewed publication")
+    print(f"{'=' * 60}\n")
 
     all_results = {}
 
     for key in ANDES_TARGETS:
         glacier = GLACIER_REGISTRY[key]
-        print(f"\n{'─'*40}")
+        print(f"\n{'─' * 40}")
         print(f"  Analyzing: {glacier['name']}")
         print(f"  Region: {glacier['region']}")
-        print(f"{'─'*40}")
+        print(f"{'─' * 40}")
 
         safe_name = glacier["name"].replace(" ", "_").replace("/", "-").lower()
         glacier_dir = OUTPUTS_DIR / safe_name
         glacier_dir.mkdir(parents=True, exist_ok=True)
 
         # Step 1: Satellite data
-        print(f"\n  [1/4] Acquiring satellite data ...")
+        print("\n  [1/4] Acquiring satellite data ...")
         if not args.skip_download:
             from glacier_toolkit.acquire.landsat import export_timeseries
+
             ndsi_files = export_timeseries(
                 glacier,
                 year_start=args.year_start,
@@ -85,9 +81,11 @@ def main():
             continue
 
         # Step 2: Glacier area analysis
-        print(f"  [2/4] Computing glacier area time series ...")
+        print("  [2/4] Computing glacier area time series ...")
         from glacier_toolkit.analyze.glacier_area import (
-            build_area_timeseries, compute_area_change, fit_linear_trend,
+            build_area_timeseries,
+            compute_area_change,
+            fit_linear_trend,
         )
 
         ts_df = build_area_timeseries(ndsi_files)
@@ -99,22 +97,14 @@ def main():
         print(f"    Trend: {trend['slope_km2_per_year']:.4f} km²/yr")
 
         # Step 3: Lake detection and GLOF analysis
-        print(f"  [3/4] Detecting proglacial lakes ...")
-        from glacier_toolkit.analyze.ndsi import load_ndsi_geotiff, classify_glacier
-        from glacier_toolkit.analyze.ndwi import compute_ndwi, detect_water_bodies
-
-        # Use latest year for lake detection
-        latest_year = max(ndsi_files.keys())
-        latest_ndsi = load_ndsi_geotiff(ndsi_files[latest_year])
-        glacier_mask = classify_glacier(latest_ndsi)
-
-        # NDWI-based lake detection (using NDSI file as proxy — in production
-        # this would use separate green/NIR bands)
-        # For the paper: download full multi-band composites
-        print(f"    Note: Full NDWI requires green+NIR bands (use Sentinel-2 for best results)")
+        print("  [3/4] Detecting proglacial lakes ...")
+        # NDWI-based lake detection requires separate green/NIR bands.
+        # For the paper this should use Sentinel-2 for best resolution.
+        # See acquire/sentinel.py for the multi-band download workflow.
+        print("    Note: Full NDWI requires green+NIR bands (use Sentinel-2 for best results)")
 
         # Step 4: GLOF risk classification
-        print(f"  [4/4] GLOF risk assessment ...")
+        print("  [4/4] GLOF risk assessment ...")
         from glacier_toolkit.glof.lake_timeseries import estimate_lake_volume
         from glacier_toolkit.glof.risk_classify import classify_risk
 
@@ -136,17 +126,18 @@ def main():
         all_results[key] = {
             "glacier": glacier["name"],
             "area_change": change,
-            "trend": {k: float(v) if isinstance(v, (np.floating, float)) else v
-                      for k, v in trend.items()},
+            "trend": {
+                k: float(v) if isinstance(v, (np.floating, float)) else v for k, v in trend.items()
+            },
             "risk": risk,
             "lake_record": lake_record,
         }
 
     # Generate paper outputs
     if all_results:
-        print(f"\n{'='*60}")
-        print(f"  Generating Paper Outputs")
-        print(f"{'='*60}\n")
+        print(f"\n{'=' * 60}")
+        print("  Generating Paper Outputs")
+        print(f"{'=' * 60}\n")
 
         # Risk table
         from glacier_toolkit.glof.risk_classify import generate_risk_table
@@ -167,13 +158,13 @@ def main():
             json.dump(all_results, f, indent=2, default=str)
 
         print(f"\n  Outputs saved to: {PAPER_OUT_DIR}")
-        print(f"    - glof_risk_table.csv")
-        print(f"    - glof_risk_table.tex (LaTeX-ready)")
-        print(f"    - andes_glof_results.json")
+        print("    - glof_risk_table.csv")
+        print("    - glof_risk_table.tex (LaTeX-ready)")
+        print("    - andes_glof_results.json")
 
-    print(f"\n{'='*60}")
-    print(f"  ANDES GLOF ANALYSIS COMPLETE")
-    print(f"{'='*60}\n")
+    print(f"\n{'=' * 60}")
+    print("  ANDES GLOF ANALYSIS COMPLETE")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":

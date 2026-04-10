@@ -10,17 +10,24 @@ Creates Instagram-ready slides showing:
 This is the most powerful single visualization for communicating glacier retreat.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.colors import LinearSegmentedColormap
 from pathlib import Path
 
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
+
 from ..config import (
-    C_BG, C_TEXT, C_SUB, C_LIGHT, C_ACC, C_ICE, C_LAKE,
-    IG_DPI, IG_FIG, IG_OUT_DIR, FONT_FAMILY,
+    C_BG,
+    C_ICE,
+    C_LIGHT,
+    C_SUB,
+    C_TEXT,
+    FONT_FAMILY,
+    IG_DPI,
+    IG_FIG,
+    IG_OUT_DIR,
 )
-from ..style import add_title_zone, add_source_line, add_slide_number, apply_theme
+from ..style import add_slide_number, add_source_line, add_title_zone, apply_theme
 
 
 def make_ghost_ice_slide(
@@ -71,8 +78,7 @@ def make_ghost_ice_slide(
     apply_theme()
 
     # Compute headline statistic
-    loss_pct = ((area_early_km2 - area_late_km2) / area_early_km2 * 100
-                if area_early_km2 > 0 else 0)
+    loss_pct = (area_early_km2 - area_late_km2) / area_early_km2 * 100 if area_early_km2 > 0 else 0
     loss_km2 = area_early_km2 - area_late_km2
 
     # Create the figure
@@ -93,9 +99,16 @@ def make_ghost_ice_slide(
     add_title_zone(fig, headline, subtitle)
 
     # ── Time range ──
-    fig.text(0.50, 0.855, f"{year_early} → {year_late}",
-             fontsize=16, ha="center", va="top", color=C_SUB,
-             family=FONT_FAMILY)
+    fig.text(
+        0.50,
+        0.855,
+        f"{year_early} → {year_late}",
+        fontsize=16,
+        ha="center",
+        va="top",
+        color=C_SUB,
+        family=FONT_FAMILY,
+    )
 
     # ── Map axes ──
     ax = fig.add_axes([0.03, 0.12, 0.94, 0.70])
@@ -129,16 +142,29 @@ def make_ghost_ice_slide(
     stipple[::3, ::3] = True
     stipple_mask = lost_zone & stipple
     lost_overlay[stipple_mask] = [0.66, 0.85, 0.92, 0.6]
-    ax.imshow(lost_overlay, extent=extent, aspect="auto",
-              interpolation="nearest")
+    ax.imshow(lost_overlay, extent=extent, aspect="auto", interpolation="nearest")
 
     # Outline: historical boundary in dashed ice-cyan
-    _draw_mask_contour(ax, historical_mask, color=C_ICE, linewidth=1.2,
-                       linestyle="--", extent=extent, label=f"{year_early}")
+    _draw_mask_contour(
+        ax,
+        historical_mask,
+        color=C_ICE,
+        linewidth=1.2,
+        linestyle="--",
+        extent=extent,
+        label=f"{year_early}",
+    )
 
     # Outline: modern boundary in solid white
-    _draw_mask_contour(ax, modern_mask, color="#FFFFFF", linewidth=1.8,
-                       linestyle="-", extent=extent, label=f"{year_late}")
+    _draw_mask_contour(
+        ax,
+        modern_mask,
+        color="#FFFFFF",
+        linewidth=1.8,
+        linestyle="-",
+        extent=extent,
+        label=f"{year_late}",
+    )
 
     ax.set_xlim(extent[0], extent[1]) if extent else None
     ax.set_ylim(extent[2], extent[3]) if extent else None
@@ -146,23 +172,35 @@ def make_ghost_ice_slide(
 
     # ── Legend ──
     legend_elements = [
-        mpatches.Patch(facecolor=C_ICE, alpha=0.35, edgecolor=C_ICE,
-                       linestyle="--", linewidth=1.2,
-                       label=f"Ice extent {year_early}"),
-        mpatches.Patch(facecolor="none", edgecolor="#FFFFFF",
-                       linewidth=1.8,
-                       label=f"Ice extent {year_late}"),
-        mpatches.Patch(facecolor=C_ICE, alpha=0.5,
-                       label=f"Lost: {loss_km2:.1f} km²"),
+        mpatches.Patch(
+            facecolor=C_ICE,
+            alpha=0.35,
+            edgecolor=C_ICE,
+            linestyle="--",
+            linewidth=1.2,
+            label=f"Ice extent {year_early}",
+        ),
+        mpatches.Patch(
+            facecolor="none", edgecolor="#FFFFFF", linewidth=1.8, label=f"Ice extent {year_late}"
+        ),
+        mpatches.Patch(facecolor=C_ICE, alpha=0.5, label=f"Lost: {loss_km2:.1f} km²"),
     ]
-    ax.legend(handles=legend_elements, loc="lower left",
-              fontsize=9, facecolor=C_BG, edgecolor=C_LIGHT,
-              labelcolor=C_TEXT, framealpha=0.8)
+    ax.legend(
+        handles=legend_elements,
+        loc="lower left",
+        fontsize=9,
+        facecolor=C_BG,
+        edgecolor=C_LIGHT,
+        labelcolor=C_TEXT,
+        framealpha=0.8,
+    )
 
     # ── Source line ──
-    add_source_line(fig, source_text,
-                    context_text=f"Glacier area: {area_early_km2:.1f} km² → "
-                                 f"{area_late_km2:.1f} km²")
+    add_source_line(
+        fig,
+        source_text,
+        context_text=f"Glacier area: {area_early_km2:.1f} km² → {area_late_km2:.1f} km²",
+    )
 
     # ── Slide number ──
     if slide_num and total_slides:
@@ -181,8 +219,7 @@ def make_ghost_ice_slide(
     return filename
 
 
-def _draw_mask_contour(ax, mask, color, linewidth, linestyle, extent=None,
-                       label=None):
+def _draw_mask_contour(ax, mask, color, linewidth, linestyle, extent=None, label=None):
     """Draw a contour line around a boolean mask."""
     from skimage import measure
 
@@ -199,5 +236,11 @@ def _draw_mask_contour(ax, mask, color, linewidth, linestyle, extent=None,
         else:
             xs, ys = cols, rows
 
-        ax.plot(xs, ys, color=color, linewidth=linewidth,
-                linestyle=linestyle, label=label if i == 0 else None)
+        ax.plot(
+            xs,
+            ys,
+            color=color,
+            linewidth=linewidth,
+            linestyle=linestyle,
+            label=label if i == 0 else None,
+        )

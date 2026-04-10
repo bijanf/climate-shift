@@ -10,9 +10,7 @@ References:
   - Worni et al. (2014) — downstream impact assessment
 """
 
-import numpy as np
 import pandas as pd
-
 
 # Risk factor weights (sum to 1.0)
 RISK_WEIGHTS = {
@@ -142,29 +140,21 @@ def classify_risk(lake_record):
         factor_scores (dict of individual scores).
     """
     factor_scores = {
-        "lake_area": score_lake_area(
-            lake_record.get("area_km2", 0)),
-        "lake_growth_rate": score_growth_rate(
-            lake_record.get("growth_rate_pct_per_year", 0)),
-        "dam_type": score_dam_type(
-            lake_record.get("dam_type", "moraine")),
-        "estimated_volume": score_volume(
-            lake_record.get("volume_million_m3", 0)),
+        "lake_area": score_lake_area(lake_record.get("area_km2", 0)),
+        "lake_growth_rate": score_growth_rate(lake_record.get("growth_rate_pct_per_year", 0)),
+        "dam_type": score_dam_type(lake_record.get("dam_type", "moraine")),
+        "estimated_volume": score_volume(lake_record.get("volume_million_m3", 0)),
         "downstream_population": score_downstream_population(
-            lake_record.get("downstream_population", 0)),
-        "flow_distance": score_flow_distance(
-            lake_record.get("flow_distance_km", 50)),
-        "glacier_steepness": score_glacier_steepness(
-            lake_record.get("glacier_slope_deg", 0)),
+            lake_record.get("downstream_population", 0)
+        ),
+        "flow_distance": score_flow_distance(lake_record.get("flow_distance_km", 50)),
+        "glacier_steepness": score_glacier_steepness(lake_record.get("glacier_slope_deg", 0)),
     }
 
-    composite = sum(
-        factor_scores[k] * RISK_WEIGHTS[k] for k in RISK_WEIGHTS
-    )
+    composite = sum(factor_scores[k] * RISK_WEIGHTS[k] for k in RISK_WEIGHTS)
 
     risk_level = "LOW"
-    for level, threshold in sorted(RISK_THRESHOLDS.items(),
-                                    key=lambda x: x[1], reverse=True):
+    for level, threshold in sorted(RISK_THRESHOLDS.items(), key=lambda x: x[1], reverse=True):
         if composite >= threshold:
             risk_level = level
             break
@@ -194,17 +184,19 @@ def generate_risk_table(lake_records):
     rows = []
     for rec in lake_records:
         result = classify_risk(rec)
-        rows.append({
-            "Lake": rec.get("name", "Unknown"),
-            "Area (km²)": f"{rec.get('area_km2', 0):.3f}",
-            "Growth (%/yr)": f"{rec.get('growth_rate_pct_per_year', 0):.1f}",
-            "Dam Type": rec.get("dam_type", "—"),
-            "Volume (M m³)": f"{rec.get('volume_million_m3', 0):.2f}",
-            "Pop. at Risk": f"{rec.get('downstream_population', 0):,.0f}",
-            "Dist. (km)": f"{rec.get('flow_distance_km', 0):.1f}",
-            "Score": result["composite_score"],
-            "Risk Level": result["risk_level"],
-        })
+        rows.append(
+            {
+                "Lake": rec.get("name", "Unknown"),
+                "Area (km²)": f"{rec.get('area_km2', 0):.3f}",
+                "Growth (%/yr)": f"{rec.get('growth_rate_pct_per_year', 0):.1f}",
+                "Dam Type": rec.get("dam_type", "—"),
+                "Volume (M m³)": f"{rec.get('volume_million_m3', 0):.2f}",
+                "Pop. at Risk": f"{rec.get('downstream_population', 0):,.0f}",
+                "Dist. (km)": f"{rec.get('flow_distance_km', 0):.1f}",
+                "Score": result["composite_score"],
+                "Risk Level": result["risk_level"],
+            }
+        )
 
     df = pd.DataFrame(rows)
     df = df.sort_values("Score", ascending=False).reset_index(drop=True)

@@ -37,8 +37,7 @@ def compute_ndwi(green, nir):
         return ndwi
 
 
-def detect_water_bodies(ndwi, threshold=0.3, min_area_km2=0.001,
-                        pixel_size_m=30):
+def detect_water_bodies(ndwi, threshold=0.3, min_area_km2=0.001, pixel_size_m=30):
     """Detect water bodies from an NDWI raster.
 
     Parameters
@@ -65,7 +64,7 @@ def detect_water_bodies(ndwi, threshold=0.3, min_area_km2=0.001,
     mask = np.where(np.isnan(values), False, values > threshold)
 
     # Remove tiny water bodies
-    min_pixels = min_area_km2 * 1e6 / (pixel_size_m ** 2)
+    min_pixels = min_area_km2 * 1e6 / (pixel_size_m**2)
     labeled, n_features = ndimage.label(mask)
 
     if n_features > 0:
@@ -129,19 +128,21 @@ def measure_lake_areas(water_mask, pixel_size_m=30):
         'n_pixels'.
     """
     labeled, n_features = ndimage.label(water_mask)
-    pixel_area_km2 = (pixel_size_m ** 2) / 1e6
+    pixel_area_km2 = (pixel_size_m**2) / 1e6
 
     lakes = []
     for i in range(1, n_features + 1):
         component = labeled == i
         n_pixels = int(np.sum(component))
         centroid = ndimage.center_of_mass(component)
-        lakes.append({
-            "label": i,
-            "area_km2": n_pixels * pixel_area_km2,
-            "centroid_row": centroid[0],
-            "centroid_col": centroid[1],
-            "n_pixels": n_pixels,
-        })
+        lakes.append(
+            {
+                "label": i,
+                "area_km2": n_pixels * pixel_area_km2,
+                "centroid_row": centroid[0],
+                "centroid_col": centroid[1],
+                "n_pixels": n_pixels,
+            }
+        )
 
     return sorted(lakes, key=lambda x: x["area_km2"], reverse=True)

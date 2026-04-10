@@ -15,7 +15,6 @@ import numpy as np
 
 from ..config import DEM_DIR
 
-
 # Copernicus DEM GLO-30 on AWS S3 (public, no auth required)
 COP_DEM_BASE = "https://copernicus-dem-30m.s3.amazonaws.com"
 
@@ -114,7 +113,7 @@ def load_dem(tile_path):
     xarray.DataArray
         Elevation in meters with spatial coordinates.
     """
-    import rioxarray  # noqa: F401
+    import rioxarray
 
     da = rioxarray.open_rasterio(tile_path)
     if "band" in da.dims and da.sizes["band"] == 1:
@@ -198,12 +197,14 @@ def hypsometric_bins(dem_array, glacier_mask, n_bins=10):
         in_bin = glacier_mask & (dem_array >= lo) & (dem_array < hi)
         n_pixels = np.sum(in_bin)
 
-        bins.append({
-            "elev_min": float(lo),
-            "elev_max": float(hi),
-            "elev_mid": float((lo + hi) / 2),
-            "n_pixels": int(n_pixels),
-            "fraction": float(n_pixels / total_pixels) if total_pixels > 0 else 0,
-        })
+        bins.append(
+            {
+                "elev_min": float(lo),
+                "elev_max": float(hi),
+                "elev_mid": float((lo + hi) / 2),
+                "n_pixels": int(n_pixels),
+                "fraction": float(n_pixels / total_pixels) if total_pixels > 0 else 0,
+            }
+        )
 
     return bins

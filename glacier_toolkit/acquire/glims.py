@@ -7,21 +7,16 @@ from Space (GLIMS) database — a NASA-backed archive covering 200,000+ glaciers
 Data source: https://www.glims.org / https://nsidc.org/data/glims
 """
 
-import zipfile
 import shutil
-from pathlib import Path
+import zipfile
 from urllib.request import Request, urlopen
 
 import geopandas as gpd
-import numpy as np
 
 from ..config import GLIMS_DIR
 
-
 # NSIDC GLIMS bulk download (entire database as a shapefile)
-GLIMS_URL = (
-    "https://www.glims.org/download/glims_db_20230517.zip"
-)
+GLIMS_URL = "https://www.glims.org/download/glims_db_20230517.zip"
 GLIMS_SHAPEFILE = GLIMS_DIR / "glims_polygons.shp"
 
 

@@ -9,9 +9,14 @@ import numpy as np
 from scipy import ndimage
 
 
-def detect_glacial_lakes(ndwi_array, glacier_mask, buffer_pixels=67,
-                         ndwi_threshold=0.3, min_area_km2=0.001,
-                         pixel_size_m=30):
+def detect_glacial_lakes(
+    ndwi_array,
+    glacier_mask,
+    buffer_pixels=67,
+    ndwi_threshold=0.3,
+    min_area_km2=0.001,
+    pixel_size_m=30,
+):
     """Identify glacial lakes near glacier termini.
 
     Parameters
@@ -43,7 +48,7 @@ def detect_glacial_lakes(ndwi_array, glacier_mask, buffer_pixels=67,
 
     # Label connected components
     labeled, n_features = ndimage.label(water)
-    pixel_area_km2 = (pixel_size_m ** 2) / 1e6
+    pixel_area_km2 = (pixel_size_m**2) / 1e6
     min_pixels = min_area_km2 / pixel_area_km2
 
     lakes = []
@@ -60,15 +65,17 @@ def detect_glacial_lakes(ndwi_array, glacier_mask, buffer_pixels=67,
             continue
 
         centroid = ndimage.center_of_mass(component)
-        lakes.append({
-            "label": i,
-            "area_km2": n_pixels * pixel_area_km2,
-            "centroid_row": centroid[0],
-            "centroid_col": centroid[1],
-            "n_pixels": n_pixels,
-            "distance_to_glacier_pixels": float(min_dist),
-            "distance_to_glacier_m": float(min_dist * pixel_size_m),
-        })
+        lakes.append(
+            {
+                "label": i,
+                "area_km2": n_pixels * pixel_area_km2,
+                "centroid_row": centroid[0],
+                "centroid_col": centroid[1],
+                "n_pixels": n_pixels,
+                "distance_to_glacier_pixels": float(min_dist),
+                "distance_to_glacier_m": float(min_dist * pixel_size_m),
+            }
+        )
 
     return sorted(lakes, key=lambda x: x["area_km2"], reverse=True)
 
@@ -133,8 +140,8 @@ def flag_new_lakes(current_lakes, historical_lakes, match_tolerance_pixels=10):
         is_new = True
         for hist in historical_lakes:
             dist = np.sqrt(
-                (curr["centroid_row"] - hist["centroid_row"]) ** 2 +
-                (curr["centroid_col"] - hist["centroid_col"]) ** 2
+                (curr["centroid_row"] - hist["centroid_row"]) ** 2
+                + (curr["centroid_col"] - hist["centroid_col"]) ** 2
             )
             if dist < match_tolerance_pixels:
                 is_new = False

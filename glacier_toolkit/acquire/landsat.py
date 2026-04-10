@@ -15,10 +15,7 @@ First-time setup:
 import warnings
 from pathlib import Path
 
-import numpy as np
-
-from ..config import LANDSAT_DIR, SEASON_NH_SUMMER
-
+from ..config import LANDSAT_DIR
 
 # ══════════════════════════════════════════════════════════════════════════════
 # GEE initialization
@@ -115,9 +112,9 @@ LANDSAT_COLLECTIONS = {
 # reflective wavelength and normalized difference vegetation index continuity"
 HARMONIZATION_COEFFICIENTS = {
     "green": {"slope": 0.9785, "intercept": -0.0095},
-    "red":   {"slope": 0.9785, "intercept": -0.0016},
-    "nir":   {"slope": 0.9833, "intercept": -0.0012},
-    "swir1": {"slope": 0.9088, "intercept":  0.0003},
+    "red": {"slope": 0.9785, "intercept": -0.0016},
+    "nir": {"slope": 0.9833, "intercept": -0.0012},
+    "swir1": {"slope": 0.9088, "intercept": 0.0003},
     "swir2": {"slope": 0.9103, "intercept": -0.0015},
 }
 
@@ -126,9 +123,10 @@ HARMONIZATION_COEFFICIENTS = {
 # Cloud masking
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _mask_clouds_landsat(image):
     """Apply QA_PIXEL cloud/shadow mask to a Landsat image."""
-    ee = _get_ee()
+    _get_ee()  # ensure GEE is initialized
     qa = image.select("QA_PIXEL")
     # Bit 3 = cloud shadow, Bit 4 = cloud
     cloud_shadow = qa.bitwiseAnd(1 << 3).eq(0)
@@ -138,13 +136,12 @@ def _mask_clouds_landsat(image):
 
 def _apply_scale_factors(image, sensor_key):
     """Apply Collection 2 scale factors to convert to surface reflectance."""
-    ee = _get_ee()
+    _get_ee()  # ensure GEE is initialized
     info = LANDSAT_COLLECTIONS[sensor_key]
     sf = info["scale_factor"]
     off = info["scale_offset"]
 
-    optical_bands = [info["green"], info["red"], info["nir"],
-                     info["swir1"], info["swir2"]]
+    optical_bands = [info["green"], info["red"], info["nir"], info["swir1"], info["swir2"]]
     scaled = image.select(optical_bands).multiply(sf).add(off)
     return image.addBands(scaled, overwrite=True)
 
@@ -158,16 +155,18 @@ def _harmonize_to_l8(image, sensor_key):
     if sensor_key in ("L8", "L9"):
         return image  # already L8-compatible
 
-    ee = _get_ee()
+    _get_ee()  # ensure GEE is initialized
     info = LANDSAT_COLLECTIONS[sensor_key]
 
     for band_key in ("green", "red", "nir", "swir1", "swir2"):
         band_name = info[band_key]
         coeff = HARMONIZATION_COEFFICIENTS[band_key]
-        harmonized = (image.select(band_name)
-                      .multiply(coeff["slope"])
-                      .add(coeff["intercept"])
-                      .rename(band_name))
+        harmonized = (
+            image.select(band_name)
+            .multiply(coeff["slope"])
+            .add(coeff["intercept"])
+            .rename(band_name)
+        )
         image = image.addBands(harmonized, overwrite=True)
 
     return image
@@ -176,6 +175,7 @@ def _harmonize_to_l8(image, sensor_key):
 # ══════════════════════════════════════════════════════════════════════════════
 # Collection building
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _best_sensor_for_year(year):
     """Pick the best Landsat sensor available for a given year."""
@@ -196,9 +196,8 @@ def _fallback_sensors_for_year(year):
     sensors = []
     if year >= 2021:
         sensors.extend(["L9", "L8"])
-    if 2013 <= year <= 2024:
-        if "L8" not in sensors:
-            sensors.append("L8")
+    if 2013 <= year <= 2024 and "L8" not in sensors:
+        sensors.append("L8")
     if 1999 <= year <= 2024:
         sensors.append("L7")
     if 1984 <= year <= 2012:
@@ -206,8 +205,7 @@ def _fallback_sensors_for_year(year):
     return sensors if sensors else ["L8"]
 
 
-def get_collection(bbox, year, season_months, sensor_key=None,
-                   cloud_cover_max=50):
+def get_collection(bbox, year, season_months, sensor_key=None, cloud_cover_max=50):
     """Get a cloud-masked, harmonized Landsat collection for one season.
 
     Parameters
@@ -247,22 +245,24 @@ def get_collection(bbox, year, season_months, sensor_key=None,
         end_month = max(season_months)
         end_date = f"{year}-{end_month:02d}-28" if end_month < 12 else f"{year}-12-31"
 
-    collection = (ee.ImageCollection(info["collection"])
-                  .filterBounds(aoi)
-                  .filterDate(start_date, end_date)
-                  .filter(ee.Filter.lt("CLOUD_COVER", cloud_cover_max)))
+    collection = (
+        ee.ImageCollection(info["collection"])
+        .filterBounds(aoi)
+        .filterDate(start_date, end_date)
+        .filter(ee.Filter.lt("CLOUD_COVER", cloud_cover_max))
+    )
 
     # Apply processing chain
-    collection = (collection
-                  .map(lambda img: _apply_scale_factors(img, sensor_key))
-                  .map(_mask_clouds_landsat)
-                  .map(lambda img: _harmonize_to_l8(img, sensor_key)))
+    collection = (
+        collection.map(lambda img: _apply_scale_factors(img, sensor_key))
+        .map(_mask_clouds_landsat)
+        .map(lambda img: _harmonize_to_l8(img, sensor_key))
+    )
 
     return collection
 
 
-def compute_annual_composite(bbox, year, season_months, sensor_key=None,
-                             bands=None):
+def compute_annual_composite(bbox, year, season_months, sensor_key=None, bands=None):
     """Create a cloud-free median composite for one summer season.
 
     Parameters
@@ -281,7 +281,7 @@ def compute_annual_composite(bbox, year, season_months, sensor_key=None,
         Median composite with standardized band names:
         'green', 'red', 'nir', 'swir1', 'swir2'.
     """
-    ee = _get_ee()
+    _get_ee()  # ensure GEE is initialized
 
     if sensor_key is None:
         sensor_key = _best_sensor_for_year(year)
@@ -295,13 +295,10 @@ def compute_annual_composite(bbox, year, season_months, sensor_key=None,
         raise ValueError(f"No cloud-free scenes for {year} (season {season_months})")
 
     # Select and rename to standard names
-    original_bands = [info["green"], info["red"], info["nir"],
-                      info["swir1"], info["swir2"]]
+    original_bands = [info["green"], info["red"], info["nir"], info["swir1"], info["swir2"]]
     standard_names = ["green", "red", "nir", "swir1", "swir2"]
 
-    composite = (collection
-                 .select(original_bands, standard_names)
-                 .median())
+    composite = collection.select(original_bands, standard_names).median()
 
     if bands:
         composite = composite.select(bands)
@@ -379,13 +376,15 @@ def export_to_geotiff(image, bbox, output_path, scale=30, crs="EPSG:4326"):
     w, s, e, n = bbox
     region = ee.Geometry.Rectangle([w, s, e, n])
 
-    url = image.getDownloadURL({
-        "scale": scale,
-        "crs": crs,
-        "region": region.getInfo()["coordinates"],
-        "format": "GEO_TIFF",
-        "filePerBand": False,
-    })
+    url = image.getDownloadURL(
+        {
+            "scale": scale,
+            "crs": crs,
+            "region": region.getInfo()["coordinates"],
+            "format": "GEO_TIFF",
+            "filePerBand": False,
+        }
+    )
 
     print(f"  Downloading GeoTIFF: {output_path.name} ...")
     resp = requests.get(url, timeout=300)
@@ -433,8 +432,7 @@ def export_annual_ndsi(glacier_config, year, output_dir=None):
     last_error = None
     for sensor in sensors:
         try:
-            composite = compute_annual_composite(bbox, year, season,
-                                                  sensor_key=sensor)
+            composite = compute_annual_composite(bbox, year, season, sensor_key=sensor)
             ndsi = compute_ndsi(composite)
             return export_to_geotiff(ndsi, bbox, out_path)
         except Exception as exc:
@@ -478,8 +476,9 @@ def export_annual_rgb(glacier_config, year, output_dir=None):
     return export_to_geotiff(composite, bbox, out_path)
 
 
-def export_timeseries(glacier_config, year_start=1985, year_end=2025,
-                      output_dir=None, skip_existing=True):
+def export_timeseries(
+    glacier_config, year_start=1985, year_end=2025, output_dir=None, skip_existing=True
+):
     """Export NDSI GeoTIFFs for a range of years.
 
     Parameters
@@ -500,5 +499,5 @@ def export_timeseries(glacier_config, year_start=1985, year_end=2025,
             path = export_annual_ndsi(glacier_config, year, output_dir)
             results[year] = path
         except Exception as exc:
-            warnings.warn(f"  Skipping {year}: {exc}")
+            warnings.warn(f"  Skipping {year}: {exc}", stacklevel=2)
     return results
