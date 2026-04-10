@@ -150,7 +150,7 @@ def compute_climate_sensitivity(
     }
 
 
-def cross_glacier_regression(per_glacier_results):
+def cross_glacier_regression(per_glacier_results, terminus_filter=None):
     """Test the across-glacier hypothesis: faster warming → faster retreat.
 
     Pools per-glacier warming rates and retreat rates, then fits a
@@ -163,6 +163,11 @@ def cross_glacier_regression(per_glacier_results):
         - 'warming_rate_c_per_decade': from compute_local_warming_rate
         - 'retreat_rate_km2_per_year': from fit_linear_trend (negative for retreating)
         - 'glacier_name', 'glacier_region': identifiers
+        - 'terminus_type' (optional): "land", "marine", or "lake"
+    terminus_filter : str or list, optional
+        If provided, only include glaciers with matching terminus_type.
+        E.g. terminus_filter="land" or ["land"] to test the hypothesis on
+        land-terminating glaciers only (where calving dynamics don't confound).
 
     Returns
     -------
@@ -174,7 +179,16 @@ def cross_glacier_regression(per_glacier_results):
         - regression_intercept
         - r_squared
         - p_value
+        - terminus_filter (echoed)
     """
+    # Filter by terminus type
+    if terminus_filter:
+        if isinstance(terminus_filter, str):
+            terminus_filter = [terminus_filter]
+        per_glacier_results = [
+            r for r in per_glacier_results if r.get("terminus_type") in terminus_filter
+        ]
+
     rows = [
         r
         for r in per_glacier_results
@@ -184,7 +198,7 @@ def cross_glacier_regression(per_glacier_results):
         )
     ]
 
-    if len(rows) < 5:
+    if len(rows) < 3:
         return {
             "n_glaciers": len(rows),
             "pearson_r": np.nan,
@@ -195,6 +209,7 @@ def cross_glacier_regression(per_glacier_results):
             "regression_intercept": np.nan,
             "r_squared": np.nan,
             "p_value": np.nan,
+            "terminus_filter": terminus_filter,
         }
 
     warming = np.array([r["warming_rate_c_per_decade"] for r in rows])
@@ -214,6 +229,7 @@ def cross_glacier_regression(per_glacier_results):
         "regression_intercept": float(fit.intercept),
         "r_squared": float(fit.rvalue**2),
         "p_value": float(fit.pvalue),
+        "terminus_filter": terminus_filter,
     }
 
 

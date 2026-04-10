@@ -187,6 +187,7 @@ def main():
                 "key": key,
                 "glacier_name": glacier["name"],
                 "glacier_region": glacier["region"],
+                "terminus_type": glacier.get("terminus_type", "land"),
                 "lat": glacier["lat"],
                 "lon": glacier["lon"],
                 "year_start": args.year_start,
@@ -210,17 +211,45 @@ def main():
         print("\n  No usable data. Run the data pipeline first.")
         return
 
-    # ── Cross-glacier regression ──
+    # ── Cross-glacier regression: ALL glaciers ──
     print(f"\n{'=' * 70}")
     print("  Cross-glacier regression (warming rate vs retreat rate)")
     print(f"{'=' * 70}")
 
-    cross = cross_glacier_regression(per_glacier_results)
-    print(f"  N glaciers: {cross['n_glaciers']}")
-    print(f"  Pearson r:  {cross['pearson_r']:+.3f} (p={cross['pearson_p']:.4f})")
-    print(f"  Spearman ρ: {cross['spearman_r']:+.3f} (p={cross['spearman_p']:.4f})")
-    print(f"  Slope:      {cross['regression_slope']:+.3f} km²/yr per °C/decade")
-    print(f"  R²:         {cross['r_squared']:.3f}")
+    cross_all = cross_glacier_regression(per_glacier_results)
+    print(f"\n  ALL glaciers (n={cross_all['n_glaciers']}):")
+    print(f"    Pearson r:  {cross_all['pearson_r']:+.3f} (p={cross_all['pearson_p']:.4f})")
+    print(f"    Spearman ρ: {cross_all['spearman_r']:+.3f} (p={cross_all['spearman_p']:.4f})")
+    print(f"    Slope:      {cross_all['regression_slope']:+.3f} km²/yr per °C/decade")
+    print(f"    R²:         {cross_all['r_squared']:.3f}")
+
+    # ── Cross-glacier regression: LAND-terminating only ──
+    cross_land = cross_glacier_regression(per_glacier_results, terminus_filter="land")
+    print(f"\n  LAND-terminating only (n={cross_land['n_glaciers']}):")
+    if cross_land["n_glaciers"] >= 3:
+        print(f"    Pearson r:  {cross_land['pearson_r']:+.3f} (p={cross_land['pearson_p']:.4f})")
+        print(f"    Spearman ρ: {cross_land['spearman_r']:+.3f} (p={cross_land['spearman_p']:.4f})")
+        print(f"    Slope:      {cross_land['regression_slope']:+.3f} km²/yr per °C/decade")
+        print(f"    R²:         {cross_land['r_squared']:.3f}")
+    else:
+        print("    (too few glaciers)")
+
+    # ── Cross-glacier regression: MARINE/LAKE calving ──
+    cross_calving = cross_glacier_regression(
+        per_glacier_results, terminus_filter=["marine", "lake"]
+    )
+    print(f"\n  MARINE/LAKE calving only (n={cross_calving['n_glaciers']}):")
+    if cross_calving["n_glaciers"] >= 3:
+        print(
+            f"    Pearson r:  {cross_calving['pearson_r']:+.3f} (p={cross_calving['pearson_p']:.4f})"
+        )
+        print(
+            f"    Spearman ρ: {cross_calving['spearman_r']:+.3f} (p={cross_calving['spearman_p']:.4f})"
+        )
+        print(f"    Slope:      {cross_calving['regression_slope']:+.3f} km²/yr per °C/decade")
+        print(f"    R²:         {cross_calving['r_squared']:.3f}")
+    else:
+        print("    (too few glaciers)")
 
     # ── Per-region summary ──
     region_df = per_region_summary(per_glacier_results)
@@ -259,7 +288,9 @@ def main():
         json.dump(
             {
                 "per_glacier": serializable,
-                "cross_glacier_regression": cross,
+                "cross_glacier_regression_all": cross_all,
+                "cross_glacier_regression_land_only": cross_land,
+                "cross_glacier_regression_calving_only": cross_calving,
                 "validation": (
                     {k: v for k, v in val.items() if k != "per_glacier"}
                     if validation_records
@@ -296,7 +327,10 @@ def main():
         print(f"  Figure 1 error: {exc}")
 
     try:
-        figure_warming_vs_retreat_scatter(per_glacier_results, cross)
+        figure_warming_vs_retreat_scatter(
+            per_glacier_results,
+            {"all": cross_all, "land": cross_land, "calving": cross_calving},
+        )
     except Exception as exc:
         print(f"  Figure 2 error: {exc}")
 

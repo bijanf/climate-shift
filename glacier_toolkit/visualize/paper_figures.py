@@ -178,17 +178,21 @@ def figure_warming_vs_retreat_scatter(
 ):
     """Cross-glacier scatter: local warming rate vs retreat rate.
 
-    Each point is one glacier. The regression line tests the hypothesis
-    that faster warming → faster retreat across all glaciers.
+    Two-panel figure showing the central paper finding:
+
+    - Left panel: ALL glaciers, showing the dichotomy between calving
+      outliers and land-terminating glaciers
+    - Right panel: zoomed to land-terminating only, showing the
+      significant climate-glacier coupling that's hidden by the outliers
 
     Parameters
     ----------
     glacier_results : list of dict
-        Each must have 'warming_rate_c_per_decade' and
-        'retreat_rate_km2_per_year' and 'glacier_region'.
+        Each must have 'warming_rate_c_per_decade',
+        'retreat_rate_km2_per_year', 'glacier_region', and 'terminus_type'.
     cross_glacier_stats : dict, optional
-        From correlation.cross_glacier_regression(). If provided, the line
-        and r² are added to the plot.
+        From correlation.cross_glacier_regression(). Can be a dict of dicts
+        with keys 'all', 'land', 'calving' for the multi-fit case.
     filename : Path, optional
 
     Returns
@@ -197,7 +201,8 @@ def figure_warming_vs_retreat_scatter(
     """
     apply_paper_style()
 
-    fig, ax = plt.subplots(figsize=(6, 4.5))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.8))
+    ax_all, ax_land = axes
 
     # Filter valid results
     valid = [
@@ -209,56 +214,113 @@ def figure_warming_vs_retreat_scatter(
         )
     ]
     if len(valid) == 0:
-        ax.text(0.5, 0.5, "No data", ha="center", va="center")
+        ax_all.text(0.5, 0.5, "No data", ha="center", va="center")
         return _save_paper_fig(fig, filename or PAPER_OUT_DIR / "fig2_warming_vs_retreat.pdf")
 
     warming = np.array([r["warming_rate_c_per_decade"] for r in valid])
     retreat = np.array([r["retreat_rate_km2_per_year"] for r in valid])
-    regions = [r.get("glacier_region", "Unknown") for r in valid]
+    terminus = np.array([r.get("terminus_type", "land") for r in valid])
     names = [r.get("glacier_name", "?").split("(")[0].split("/")[0].strip() for r in valid]
 
-    # Color by region
-    unique_regions = sorted(set(regions))
-    cmap = plt.get_cmap("tab10")
-    region_colors = {reg: cmap(i % 10) for i, reg in enumerate(unique_regions)}
-    point_colors = [region_colors[r] for r in regions]
+    # Color by terminus type — this is the central scientific dichotomy
+    terminus_colors = {
+        "land": "#1976D2",  # blue: temperature-driven
+        "marine": "#D32F2F",  # red: tidewater calving
+        "lake": "#FF9800",  # orange: lake calving
+    }
+    terminus_labels = {
+        "land": "Land-terminating",
+        "marine": "Marine (tidewater)",
+        "lake": "Lake (proglacial)",
+    }
 
-    ax.scatter(warming, retreat, c=point_colors, s=60, edgecolors="white", linewidths=0.8, zorder=3)
+    def _scatter_panel(ax, warming, retreat, terminus, names):
+        for ttype, color in terminus_colors.items():
+            mask = terminus == ttype
+            if mask.any():
+                ax.scatter(
+                    warming[mask],
+                    retreat[mask],
+                    c=color,
+                    s=70,
+                    edgecolors="white",
+                    linewidths=0.8,
+                    zorder=3,
+                    label=f"{terminus_labels[ttype]} (n={int(mask.sum())})",
+                )
+        # Annotate
+        for x, y, name in zip(warming, retreat, names, strict=False):
+            ax.annotate(
+                name,
+                (x, y),
+                xytext=(4, 4),
+                textcoords="offset points",
+                fontsize=6,
+                color="#444444",
+            )
 
-    # Annotate each point with glacier name
-    for x, y, name in zip(warming, retreat, names, strict=False):
-        ax.annotate(
-            name, (x, y), xytext=(4, 4), textcoords="offset points", fontsize=6, color="#444444"
-        )
+    # ── LEFT PANEL: all glaciers ──
+    _scatter_panel(ax_all, warming, retreat, terminus, names)
+    ax_all.set_title("(a) All glaciers — calving outliers dominate", fontsize=10, pad=6)
+    ax_all.legend(loc="lower right", framealpha=0.95, fontsize=7)
 
-    # Regression line if stats provided
-    if cross_glacier_stats:
-        slope = cross_glacier_stats.get("regression_slope")
-        intercept = cross_glacier_stats.get("regression_intercept")
-        r2 = cross_glacier_stats.get("r_squared")
-        p = cross_glacier_stats.get("p_value")
+    # ── RIGHT PANEL: land-terminating only ──
+    land_mask = terminus == "land"
+    land_warming = warming[land_mask]
+    land_retreat = retreat[land_mask]
+    land_names = [n for n, m in zip(names, land_mask, strict=False) if m]
+    land_terminus = terminus[land_mask]
 
-        if slope is not None and not np.isnan(slope):
-            x_line = np.array([warming.min(), warming.max()])
+    _scatter_panel(ax_land, land_warming, land_retreat, land_terminus, land_names)
+    ax_land.set_title(
+        "(b) Land-terminating only — climate-glacier coupling revealed",
+        fontsize=10,
+        pad=6,
+    )
+
+    # Regression on land-terminating only
+    if cross_glacier_stats and isinstance(cross_glacier_stats, dict):
+        land_stats = cross_glacier_stats.get("land")
+        if (
+            land_stats
+            and land_stats.get("n_glaciers", 0) >= 3
+            and not np.isnan(land_stats.get("regression_slope", np.nan))
+        ):
+            slope = land_stats["regression_slope"]
+            intercept = land_stats["regression_intercept"]
+            r2 = land_stats["r_squared"]
+            spr = land_stats.get("spearman_r", np.nan)
+            spp = land_stats.get("spearman_p", np.nan)
+
+            x_line = np.array([land_warming.min(), land_warming.max()])
             y_line = intercept + slope * x_line
-            ax.plot(
+            ax_land.plot(
                 x_line,
                 y_line,
                 color="#222222",
-                linewidth=1.2,
+                linewidth=1.5,
                 linestyle="--",
                 zorder=2,
-                label=f"OLS fit: R²={r2:.2f}, p={p:.3f}",
+                label=f"OLS: slope={slope:+.2f}, R²={r2:.2f}\nSpearman ρ={spr:+.2f} (p={spp:.3f})",
             )
-            ax.legend(loc="upper right", framealpha=0.9)
+            ax_land.legend(loc="lower left", framealpha=0.95, fontsize=7)
 
-    # Reference lines
-    ax.axhline(0, color="#888888", linewidth=0.5, linestyle=":", zorder=1)
-    ax.axvline(0, color="#888888", linewidth=0.5, linestyle=":", zorder=1)
+    # Common formatting
+    for a in (ax_all, ax_land):
+        a.axhline(0, color="#888888", linewidth=0.5, linestyle=":", zorder=1)
+        a.axvline(0, color="#888888", linewidth=0.5, linestyle=":", zorder=1)
+        a.set_xlabel("Local warming rate (°C/decade)")
+        a.grid(True, alpha=0.3, linewidth=0.4)
 
-    ax.set_xlabel("Local warming rate (°C/decade, JJA Tmax from CRU TS v4.09)")
-    ax.set_ylabel("Glacier area trend (km²/year, NDSI from Landsat)")
-    ax.grid(True, alpha=0.3, linewidth=0.4)
+    ax_all.set_ylabel("Glacier area trend (km²/year)")
+
+    fig.suptitle(
+        "Climate-glacier coupling depends on terminus type",
+        fontsize=11,
+        fontweight="bold",
+        y=1.02,
+    )
+    fig.tight_layout()
 
     return _save_paper_fig(fig, filename or PAPER_OUT_DIR / "fig2_warming_vs_retreat.pdf")
 

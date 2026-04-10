@@ -106,6 +106,12 @@ SEASON_TROPICAL_DRY = [6, 7, 8, 9]  # default dry season for tropical glaciers
 #   season      – month list for annual composites (overrides hemisphere default)
 #   notes       – why this glacier is notable / useful for the project
 
+#
+# terminus_type      – glacier terminus environment, controls retreat dynamics:
+#                        "land"   – land-terminating, retreat dominated by climate
+#                        "marine" – tidewater, retreat dominated by calving
+#                        "lake"   – freshwater calving, mixed dynamics
+
 GLACIER_REGISTRY = {
     # ── Alaska ────────────────────────────────────────────────────────────────
     "columbia": {
@@ -116,6 +122,7 @@ GLACIER_REGISTRY = {
         "bbox": (-147.5, 60.9, -146.6, 61.4),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "marine",
         "notes": "Iconic 40-year retreat. Best Landsat archive. Lost >20 km since 1980.",
     },
     "mendenhall": {
@@ -126,6 +133,7 @@ GLACIER_REGISTRY = {
         "bbox": (-134.8, 58.3, -134.3, 58.6),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "lake",
         "notes": "Near Juneau. Growing proglacial lake. Dramatic calving events.",
     },
     # ── Greenland ─────────────────────────────────────────────────────────────
@@ -137,6 +145,7 @@ GLACIER_REGISTRY = {
         "bbox": (-50.5, 68.8, -49.0, 69.5),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "marine",
         "notes": "Fastest-flowing glacier on Earth. Enormous calving front retreat.",
     },
     # ── Patagonia ─────────────────────────────────────────────────────────────
@@ -148,6 +157,7 @@ GLACIER_REGISTRY = {
         "bbox": (-73.6, -51.3, -72.8, -50.7),
         "hemisphere": "S",
         "season": SEASON_SH_SUMMER,
+        "terminus_type": "lake",
         "notes": "Torres del Paine. Dramatic calving into Lago Grey.",
     },
     "upsala": {
@@ -158,6 +168,7 @@ GLACIER_REGISTRY = {
         "bbox": (-73.7, -50.2, -72.8, -49.5),
         "hemisphere": "S",
         "season": SEASON_SH_SUMMER,
+        "terminus_type": "lake",
         "notes": "One of the fastest-retreating glaciers in South America.",
     },
     # ── Andes (GLOF paper targets) ────────────────────────────────────────────
@@ -169,6 +180,7 @@ GLACIER_REGISTRY = {
         "bbox": (-77.5, -9.5, -77.2, -9.3),
         "hemisphere": "tropical",
         "season": [5, 6, 7, 8, 9],  # dry season in Cordillera Blanca
+        "terminus_type": "land",
         "notes": "GLOF paper target #1. Destroyed Huaraz in 1941. Lake still growing.",
     },
     "hualcan": {
@@ -179,6 +191,7 @@ GLACIER_REGISTRY = {
         "bbox": (-77.7, -9.3, -77.4, -9.1),
         "hemisphere": "tropical",
         "season": [5, 6, 7, 8, 9],
+        "terminus_type": "land",
         "notes": "Active GLOF threat. Well-documented in literature.",
     },
     "pastoruri": {
@@ -189,6 +202,7 @@ GLACIER_REGISTRY = {
         "bbox": (-77.3, -10.0, -77.1, -9.85),
         "hemisphere": "tropical",
         "season": [5, 6, 7, 8, 9],
+        "terminus_type": "land",
         "notes": "Poster child of tropical glacier loss. Split in two ~2007.",
     },
     # ── European Alps ─────────────────────────────────────────────────────────
@@ -200,6 +214,7 @@ GLACIER_REGISTRY = {
         "bbox": (7.85, 46.35, 8.25, 46.55),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "land",
         "notes": "Largest Alpine glacier (~80 km²). UNESCO World Heritage.",
     },
     "pasterze": {
@@ -210,6 +225,7 @@ GLACIER_REGISTRY = {
         "bbox": (12.55, 46.98, 12.85, 47.18),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "land",
         "notes": "Austria's largest glacier. Grossglockner. Accessible for fieldwork.",
     },
     "mer_de_glace": {
@@ -220,6 +236,7 @@ GLACIER_REGISTRY = {
         "bbox": (6.80, 45.82, 7.06, 45.98),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "land",
         "notes": "Iconic. Near Chamonix. Powerful before/after potential.",
     },
     # ── Scandinavia ───────────────────────────────────────────────────────────
@@ -231,6 +248,7 @@ GLACIER_REGISTRY = {
         "bbox": (6.65, 61.55, 7.00, 61.75),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "land",
         "notes": "Dramatic outlet arm of Jostedalsbreen. Rapid terminus retreat.",
     },
     # ── Iceland ───────────────────────────────────────────────────────────────
@@ -242,6 +260,7 @@ GLACIER_REGISTRY = {
         "bbox": (-16.7, 63.9, -15.9, 64.3),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "lake",
         "notes": "Vatnajökull outlet. Feeds Jökulsárlón glacial lagoon.",
     },
     # ── Himalayas ─────────────────────────────────────────────────────────────
@@ -253,6 +272,7 @@ GLACIER_REGISTRY = {
         "bbox": (78.85, 30.75, 79.30, 31.05),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "land",
         "notes": "Source of the Ganges. Retreating ~22 m/year. Cultural significance.",
     },
     "khumbu": {
@@ -263,6 +283,7 @@ GLACIER_REGISTRY = {
         "bbox": (86.70, 27.88, 87.00, 28.08),
         "hemisphere": "N",
         "season": [10, 11, 12, 1, 2],  # post-monsoon + winter (clearest skies)
+        "terminus_type": "land",
         "notes": "Everest region. GLOF risk from Imja Lake. Heavily studied.",
     },
     # ── Central Asia ──────────────────────────────────────────────────────────
@@ -274,6 +295,7 @@ GLACIER_REGISTRY = {
         "bbox": (72.0, 38.6, 72.5, 39.1),
         "hemisphere": "N",
         "season": SEASON_NH_SUMMER,
+        "terminus_type": "land",
         "notes": "Longest non-polar glacier (~77 km). Under-studied. Paper potential.",
     },
     # ── East Africa (extinction stories) ──────────────────────────────────────
@@ -285,6 +307,7 @@ GLACIER_REGISTRY = {
         "bbox": (37.28, -0.19, 37.36, -0.11),
         "hemisphere": "tropical",
         "season": [1, 2, 3],  # Jan–Mar dry season
+        "terminus_type": "land",
         "notes": "Nearly gone. One of last equatorial glaciers. Extinction story.",
     },
     "furtwangler": {
@@ -295,6 +318,7 @@ GLACIER_REGISTRY = {
         "bbox": (37.30, -3.12, 37.40, -3.02),
         "hemisphere": "tropical",
         "season": [1, 2, 3],
+        "terminus_type": "land",
         "notes": "Projected gone by ~2030. Most powerful visual of equatorial ice loss.",
     },
     # ── Antarctica ────────────────────────────────────────────────────────────
@@ -306,6 +330,7 @@ GLACIER_REGISTRY = {
         "bbox": (-63.0, -66.0, -61.0, -65.0),
         "hemisphere": "S",
         "season": [12, 1, 2, 3],  # austral summer
+        "terminus_type": "marine",
         "notes": "25 km retreat in 1 year (2022–23). Fastest grounded retreat ever.",
     },
     # ── New Zealand ───────────────────────────────────────────────────────────
@@ -317,6 +342,7 @@ GLACIER_REGISTRY = {
         "bbox": (170.05, -43.55, 170.30, -43.40),
         "hemisphere": "S",
         "season": SEASON_SH_SUMMER,
+        "terminus_type": "land",
         "notes": "Dramatic advance-retreat cycles. Temperate maritime glacier.",
     },
 }
