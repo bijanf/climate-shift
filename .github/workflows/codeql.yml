@@ -1,5 +1,13 @@
 name: CodeQL
 
+# CodeQL requires GitHub code scanning to be enabled. This is free for public
+# repositories but requires GitHub Advanced Security (a paid feature) on
+# private repositories. To keep CI green on a private repo, this workflow
+# only runs when the repository is public.
+#
+# When this repo is made public, CodeQL will automatically start running
+# on pushes, PRs, and the weekly schedule with no further changes needed.
+
 on:
   push:
     branches: [main]
@@ -12,6 +20,8 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    # Skip on private repos where code scanning is not enabled
+    if: ${{ !github.event.repository.private }}
     permissions:
       actions: read
       contents: read
